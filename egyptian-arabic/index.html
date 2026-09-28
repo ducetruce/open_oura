@@ -1,783 +1,368 @@
+<meta charset="utf-8">
 <title>Yalla Masri</title>
-<meta name="description" content="Learn Egyptian Arabic with spaced-repetition flashcards, quizzes and a phrasebook.">
+<meta name="description" content="A complete Egyptian Arabic course from A1 to C2: alphabet, 50 units, trainers, spaced repetition and an AI tutor.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Naskh+Arabic:wght@400;600&family=Reem+Kufi:wght@500;700&display=swap">
 <style>
 :root{
-  --bg:#EAEFEC; --surface:#F8FAF8; --surface-2:#DEE6E2; --ink:#14232A; --muted:#556970;
-  --line:#C6D2CD; --accent:#1E4FA0; --accent-ink:#FFFFFF; --accent-soft:#D5DFF1;
-  --gold:#A8741E; --gold-soft:#F1E3C6; --good:#2B7A4B; --good-soft:#D3EADB;
-  --bad:#AE3636; --bad-soft:#F2D6D4;
-  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
-  --f-ar:"Noto Naskh Arabic", "Geeza Pro", "Arial", serif;
-  --f-kufi:"Reem Kufi", "Noto Naskh Arabic", "Geeza Pro", sans-serif;
-  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --r:14px;
+  --bg:#E9EEEB; --surface:#F8FAF8; --surface-2:#DDE5E1; --ink:#13222A; --muted:#51666D;
+  --line:#C4D0CB; --accent:#1E4FA0; --accent-ink:#FFFFFF; --accent-soft:#D4DEF1;
+  --gold:#A06C16; --gold-soft:#F1E2C3; --good:#26744A; --good-soft:#D2EADA; --bad:#AB3434; --bad-soft:#F3D6D4;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --f-ar:"Noto Naskh Arabic","Geeza Pro","Arial",serif;
+  --f-kufi:"Reem Kufi","Noto Naskh Arabic","Geeza Pro",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:14px; --shadow:0 1px 2px rgb(10 30 40 / .08), 0 4px 14px rgb(10 30 40 / .05);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --bg:#0E1518; --surface:#152025; --surface-2:#1D2B31; --ink:#E3ECE9; --muted:#93A7AC;
-    --line:#2B3C43; --accent:#83A9EE; --accent-ink:#0A1322; --accent-soft:#1D2D4B;
-    --gold:#DBAA52; --gold-soft:#3A2F1A; --good:#61C28D; --good-soft:#173326;
-    --bad:#E27A76; --bad-soft:#3A1E1E;
+    --bg:#0D1417; --surface:#142026; --surface-2:#1C2B32; --ink:#E2EBE8; --muted:#92A6AB;
+    --line:#2A3B42; --accent:#86ABEF; --accent-ink:#0A1322; --accent-soft:#1C2C4A;
+    --gold:#DCAB55; --gold-soft:#3A2F1A; --good:#63C48F; --good-soft:#163226; --bad:#E47B77; --bad-soft:#3B1E1E;
+    --shadow:none;
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#0E1518; --surface:#152025; --surface-2:#1D2B31; --ink:#E3ECE9; --muted:#93A7AC;
-  --line:#2B3C43; --accent:#83A9EE; --accent-ink:#0A1322; --accent-soft:#1D2D4B;
-  --gold:#DBAA52; --gold-soft:#3A2F1A; --good:#61C28D; --good-soft:#173326;
-  --bad:#E27A76; --bad-soft:#3A1E1E;
+  --bg:#0D1417; --surface:#142026; --surface-2:#1C2B32; --ink:#E2EBE8; --muted:#92A6AB;
+  --line:#2A3B42; --accent:#86ABEF; --accent-ink:#0A1322; --accent-soft:#1C2C4A;
+  --gold:#DCAB55; --gold-soft:#3A2F1A; --good:#63C48F; --good-soft:#163226; --bad:#E47B77; --bad-soft:#3B1E1E;
+  --shadow:none;
 }
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-body);}
-.wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:20px}
-button,select,input{font:inherit;color:inherit}
+html,body{background:var(--bg)}
+body{color:var(--ink);font:16px/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
+button,select,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
+button:disabled{cursor:default;opacity:.6}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
-.ar{font-family:var(--f-ar);direction:rtl;unicode-bidi:isolate}
-.tr{font-family:var(--f-mono);font-size:.92em;color:var(--muted)}
-
-/* header */
-.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
-.brand{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
-.brand h1{margin:0;font:700 clamp(28px,5vw,40px)/1 var(--f-display);letter-spacing:-.02em}
-.brand .kufi{font:700 clamp(26px,4.4vw,36px)/1 var(--f-kufi);color:var(--accent)}
-.brand p{margin:0;width:100%;color:var(--muted);font-size:15px}
-.stats{display:flex;gap:8px;flex-wrap:wrap}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:92px}
-.stat b{display:block;font:700 20px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
-.stat span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-.stat.streak b{color:var(--gold)}
-
-/* tabs */
-nav.tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:12px;width:max-content;max-width:100%;overflow-x:auto}
-nav.tabs button{border:0;background:transparent;padding:8px 16px;border-radius:9px;font-weight:700;color:var(--muted);white-space:nowrap}
-nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
-
-/* layout */
-.grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
-@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
-.panel h2{margin:0 0 10px;font:700 18px/1.2 var(--f-display)}
-.panel h3{margin:18px 0 6px;font:700 15px/1.2 var(--f-display)}
+[hidden]{display:none!important}
+.ar{font-family:var(--f-ar);direction:rtl;unicode-bidi:isolate;line-height:1.6}
+.tr{font-family:var(--f-mono);font-size:.9em;color:var(--muted)}
+.en{color:var(--ink)}
+.note{color:var(--muted);font-size:14px;margin:6px 0}
 .label{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
-
-/* controls */
-.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-select,input[type="search"]{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;max-width:100%}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.seg button{border:0;background:var(--surface);padding:8px 12px;font-size:14px}
-.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.lead{color:var(--muted);font-size:17px;max-width:62ch;margin:6px 0 0}
+h1{font:700 clamp(26px,4.2vw,38px)/1.15 var(--f-display);letter-spacing:-.02em;margin:6px 0 10px;text-wrap:balance}
+h2{font:700 20px/1.25 var(--f-display);margin:22px 0 10px;text-wrap:balance}
+h3{font:700 16px/1.3 var(--f-display);margin:18px 0 8px}
+.grow{flex:1}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row.center{justify-content:center}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+.bar input[type=search],.bar input[type=text]{flex:1;min-width:0}
+select,input[type=search],input[type=text],input[type=number],textarea{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;max-width:100%}
+textarea{width:100%;resize:vertical}
 .check{display:inline-flex;gap:6px;align-items:center;font-size:14px;color:var(--muted)}
-.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 16px;font-weight:700}
-.btn:hover{border-color:var(--accent)}
+
+/* app chrome */
+.app{min-height:100%;display:flex;flex-direction:column}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:baseline;gap:10px;background:none;border:0;padding:0;white-space:nowrap}
+.brand b{font:700 22px/1 var(--f-display);letter-spacing:-.02em}
+.brand .ar{font:700 20px/1 var(--f-kufi);color:var(--accent)}
+.nav{display:flex;gap:2px;margin-left:8px}
+.nav button{border:0;background:none;padding:8px 12px;border-radius:9px;color:var(--muted);font-weight:700;font-size:15px}
+.nav button[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.nav button:hover{color:var(--ink)}
+#hdr-stats{margin-left:auto;display:flex;gap:10px;font-size:13px;color:var(--muted);align-items:center}
+.hstat b{color:var(--ink);font-variant-numeric:tabular-nums}
+.hstat.streak b{color:var(--gold)}
+.hstat.sync{font-size:12px}
+.hstat.sync.synced{color:var(--good)}
+.gear{border:1px solid var(--line);background:var(--surface);border-radius:999px;width:34px;height:34px}
+main{max-width:1120px;width:100%;margin:0 auto;padding-inline:16px;padding-block:18px 110px}
+.bottomnav{display:none}
+@media (max-width:820px){
+  .nav{display:none}
+  .hstat.sync{display:none}
+  .topbar-in{gap:10px}
+  #hdr-stats{gap:8px}
+  .bottomnav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+  .bottomnav button{border:0;background:none;display:grid;justify-items:center;gap:2px;font-size:11px;font-weight:700;color:var(--muted);padding:4px 0}
+  .bottomnav button span{font-size:18px;line-height:1}
+  .bottomnav button[aria-current="page"]{color:var(--accent)}
+}
+
+/* shared blocks */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.panel>h2:first-child{margin-top:0}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 16px;font-weight:700;text-align:center}
+.btn:hover:not(:disabled){border-color:var(--accent)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .btn.ghost{background:transparent}
-.speak{border:1px solid var(--line);background:var(--surface);border-radius:999px;width:36px;height:36px;display:inline-grid;place-items:center;flex:none}
+.btn.small{padding:6px 10px;font-size:13px}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.danger-t{color:var(--bad)}
+.back{border:0;background:none;color:var(--accent);font-weight:700;padding:4px 0;margin-bottom:4px}
+.speak{border:1px solid var(--line);background:var(--surface);border-radius:999px;width:34px;height:34px;display:inline-grid;place-items:center;flex:none;color:var(--ink)}
 .speak:hover{border-color:var(--accent);color:var(--accent)}
-.speak svg{width:18px;height:18px}
-
-/* flashcard */
-.card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 20px 22px;min-height:340px;display:flex;flex-direction:column;gap:14px}
-.card-meta{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.chip{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.04em;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
-.ladder{display:flex;gap:4px;align-items:center}
-.ladder i{width:18px;height:6px;border-radius:3px;background:var(--surface-2)}
-.ladder i.on{background:var(--gold)}
-.ladder small{font-family:var(--f-mono);font-size:11px;color:var(--muted);margin-left:6px}
-.face{flex:1;display:grid;place-items:center;text-align:center;gap:6px;padding-block:8px}
-.face .big-ar{font:600 clamp(40px,8vw,64px)/1.5 var(--f-ar);direction:rtl}
-.face .big-en{font:700 clamp(26px,5vw,38px)/1.2 var(--f-display);letter-spacing:-.01em;text-wrap:balance}
-.face .sub{font-size:18px}
-.face .row{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
-.answer{border-top:1px dashed var(--line);padding-top:14px;display:grid;gap:6px;text-align:center}
-.answer .en{font:700 22px/1.3 var(--f-display);text-wrap:balance}
-.answer .ar-ans{font:600 38px/1.5 var(--f-ar)}
-.note{font-size:14px;color:var(--muted);max-width:52ch;margin:0 auto}
-.actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.actions.one{grid-template-columns:1fr}
-.rate{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 6px;display:grid;gap:2px;font-weight:700}
-.rate small{font:400 12px var(--f-mono);color:var(--muted)}
-.rate kbd{font:400 11px var(--f-mono);color:var(--muted)}
-.rate.again{border-color:var(--bad);color:var(--bad)}
-.rate.hard{border-color:var(--gold);color:var(--gold)}
-.rate.good{border-color:var(--good);color:var(--good)}
-.rate.easy{border-color:var(--accent);color:var(--accent)}
-.rate:hover{background:var(--surface-2)}
-.hint{font-size:13px;color:var(--muted);text-align:center}
-.done{display:grid;place-items:center;text-align:center;gap:10px;flex:1}
-.done .kufi{font:700 44px/1.2 var(--f-kufi);color:var(--accent)}
-
-/* franco key */
-.franco{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
-.franco div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:2px 10px}
-.franco b{font:500 22px/1 var(--f-mono);color:var(--accent);grid-row:span 2}
-.franco .ar{font-size:20px;line-height:1.2;text-align:left}
-.franco small{font-size:12px;color:var(--muted)}
-
-/* progress */
-.prog{display:grid;gap:10px}
-.prog-row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:14px}
-.prog-row span:last-of-type{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-.meter{grid-column:1/-1;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;display:flex}
-.meter i{display:block;height:100%}
-.meter .k{background:var(--good)} .meter .l{background:var(--gold)}
-.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
-.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;background:var(--surface-2)}
-.legend .k::before{background:var(--good)} .legend .l::before{background:var(--gold)}
-
-/* quiz */
-.quiz-q{display:grid;gap:14px}
-.qhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.qprompt{text-align:center;padding-block:18px;display:grid;gap:4px;justify-items:center}
-.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-@media (max-width:520px){.opts{grid-template-columns:1fr}}
-.opt{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;text-align:left;display:flex;gap:10px;align-items:center;min-height:56px}
-.opt kbd{font:500 12px var(--f-mono);color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 6px;flex:none}
-.opt .ar{font-size:24px;line-height:1.4}
-.opt:hover:not(:disabled){border-color:var(--accent)}
-.opt.right{background:var(--good-soft);border-color:var(--good)}
-.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
-.opt:disabled{cursor:default}
-.pbar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
-.pbar i{display:block;height:100%;background:var(--accent);transition:width .25s}
-.score{font:700 56px/1 var(--f-display);font-variant-numeric:tabular-nums}
-.miss{display:grid;gap:6px;margin-top:10px}
-.miss div{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-block:6px}
-.miss .ar{font-size:22px}
-
-/* phrasebook */
-.chips{display:flex;gap:6px;flex-wrap:wrap}
-.chips button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:14px}
-.chips button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.list{display:grid}
-.item{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) auto auto;gap:4px 14px;align-items:center;padding-block:10px;border-bottom:1px solid var(--line)}
-.item .ar{font-size:24px;line-height:1.5;text-align:right}
-.item .en{font-weight:700}
-.item .note{grid-column:2;margin:0;font-size:13px}
-@media (max-width:620px){
-  .item{grid-template-columns:minmax(0,1fr) auto auto}
-  .item .ar{grid-column:1/-1;grid-row:1;text-align:left}
-  .item .note{grid-column:1/-1}
-}
+.speak svg{width:17px;height:17px}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);vertical-align:middle}
 .pill{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
 .pill.l{background:var(--gold-soft);color:var(--gold)}
 .pill.k{background:var(--good-soft);color:var(--good)}
-.empty{color:var(--muted);padding:20px 0}
-
-/* guide */
-.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
-.guide p,.guide li{max-width:65ch}
-.guide ul{padding-left:18px;margin:6px 0}
-.tbl{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:14px}
-th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.meter{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--good);border-radius:3px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chipbtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:14px;font-weight:700}
+.chipbtn:hover{border-color:var(--accent);color:var(--accent)}
+.linkish{border:0;background:none;color:var(--accent);font-size:13px;padding:0;font-weight:700}
+.good-t{color:var(--good)} .bad-t{color:var(--bad)}
+.tbl{overflow-x:auto;margin:8px 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 td .ar{font-size:20px}
-.voice-note{font-size:13px;color:var(--muted)}
-footer{color:var(--muted);font-size:13px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.tr-cell{font-family:var(--f-mono);font-size:.9em}
+.small{font-size:13px;color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:700;opacity:0;pointer-events:none;transition:.2s;z-index:50;max-width:calc(100% - 32px)}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* home */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;padding-block:10px 22px}
+.hero h1{font-size:clamp(28px,5vw,46px);max-width:20ch}
+.hero .row{margin-top:18px}
+.hero-ar .kufi{font:700 clamp(54px,9vw,104px)/1.1 var(--f-kufi);color:var(--accent);opacity:.9}
+@media (max-width:700px){.hero{grid-template-columns:1fr}.hero-ar{display:none}}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:18px}
+.plan{display:grid;gap:8px}
+.plan-item{display:flex;gap:12px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px}
+.plan-item:hover{border-color:var(--accent)}
+.plan-item.dim{opacity:.65}
+.plan-item b{display:block}
+.plan-item small{color:var(--muted)}
+.pi-ic{width:36px;height:36px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:17px;flex:none}
+.ladder{display:grid;gap:6px}
+.rung{display:grid;grid-template-columns:44px 1fr 90px 46px;gap:10px;align-items:center;border:1px solid transparent;background:none;border-radius:10px;padding:8px;text-align:left}
+.rung:hover{border-color:var(--line)}
+.rung.current{border-color:var(--accent);background:var(--accent-soft)}
+.rung-lv{font:700 18px var(--f-display)}
+.rung-name{font-size:14px}
+.rung-pct{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+
+/* course */
+.page-head{margin-bottom:14px}
+.lvtabs,.utabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:12px;overflow-x:auto;max-width:100%}
+.lvtabs button,.utabs button{border:0;background:transparent;padding:8px 14px;border-radius:9px;font-weight:700;color:var(--muted);white-space:nowrap;display:flex;gap:6px;align-items:baseline}
+.lvtabs button small{font-family:var(--f-mono);font-size:11px;font-weight:400}
+.lvtabs button[aria-selected="true"],.utabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.lvdesc{margin:14px 0}
+.units{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:12px}
+.unit-card{display:flex;flex-direction:column;gap:6px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+.unit-card:hover{border-color:var(--accent)}
+.unit-card.done{border-color:var(--good)}
+.uc-top{display:flex;justify-content:space-between;align-items:center;min-height:22px}
+.uc-n{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.uc-t{font:700 17px/1.25 var(--f-display)}
+.uc-ar{font-size:18px;color:var(--accent);text-align:left}
+.uc-g{color:var(--muted);font-size:13px;flex:1}
+
+.bank-card:has(.wordlist:not([hidden])){grid-column:1/-1}
+.bank-card .row{margin-top:auto}
+/* unit */
+.unit-head h1 .h-ar{font-size:.72em;color:var(--accent);font-weight:600;margin-inline-start:8px}
+.goals{margin:4px 0 12px;padding-left:20px;color:var(--muted);columns:2 280px}
+.unit-prog{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;max-width:420px;margin-bottom:14px}
+.tick{color:var(--good);font-size:13px}
+.unit-body{padding-block:12px}
+.lsec{max-width:760px}
+.lsec p,.lsec li{max-width:68ch}
+.examples{display:grid;gap:8px;margin:10px 0}
+.ex{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.2fr);gap:4px 14px;align-items:center;padding:8px 12px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.ex .row{justify-content:flex-end}
+.ex-ar{font-size:22px}
+@media (max-width:640px){.ex{grid-template-columns:1fr}.ex .row{justify-content:flex-start}}
+.culture{background:var(--gold-soft);border-radius:var(--r);padding:4px 18px 10px;margin-top:18px}
+.culture h2{color:var(--gold)}
+.step-done{margin:24px 0 8px}
+.unit-nav{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);margin-top:28px;padding-top:14px;flex-wrap:wrap}
+.dlg{display:grid;gap:10px;margin:12px 0}
+.dline{max-width:640px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;transition:border-color .2s}
+.dline.b{margin-inline-start:auto;background:var(--accent-soft);border-color:transparent}
+.dline.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-soft)}
+.who{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.dline .row{justify-content:space-between;flex-wrap:nowrap}
+.d-ar{font-size:23px}
+.wordlist{display:grid;gap:0;margin:8px 0}
+.witem{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(0,1.3fr) auto;gap:4px 12px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--line)}
+.w-ar{font-size:22px;text-align:right}
+.w-note{grid-column:1/-1;margin:0}
+@media (max-width:640px){.witem{grid-template-columns:minmax(0,1fr) auto auto}.witem .tr{grid-column:1/-1}.witem .w-en{grid-column:1/2}}
+.reading-text{display:grid;gap:12px;margin:12px 0;max-width:760px}
+.rline{padding:10px 0;border-bottom:1px dashed var(--line)}
+.r-ar{font-size:23px}
+.rline .row{justify-content:space-between;flex-wrap:nowrap}
+.letters .big-l{font-size:34px}
+.letters .form{font-size:26px}
+.numerals{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin:10px 0}
+.numerals div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px;display:grid;justify-items:center}
+.numerals b{font-size:28px}
+
+/* quiz */
+.qz{margin-top:14px}
+.qz-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px}
+.pbar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;margin-bottom:10px}
+.pbar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+.qz-body{display:grid;gap:14px}
+.qz-prompt{display:grid;gap:6px;justify-items:center;text-align:center;padding:14px 0}
+.q-ar{font:600 clamp(30px,6vw,46px)/1.6 var(--f-ar)}
+.q-tr{font-size:17px}
+.q-text{font:700 clamp(20px,3.4vw,26px)/1.3 var(--f-display);text-wrap:balance;max-width:34ch}
+.q-text .ar{font-weight:600}
+.q-en{color:var(--muted)}
+.big-listen{font-size:18px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}}
+.opt{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;text-align:left;display:flex;gap:12px;align-items:center;min-height:58px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt kbd{font:500 12px var(--f-mono);color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 6px;flex:none}
+.opt-l{display:grid;gap:2px}
+.opt-l .ar{font-size:22px;text-align:left}
+.opt.right{background:var(--good-soft);border-color:var(--good)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.type-in{width:100%;font-size:20px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.type-in.ok{border-color:var(--good);background:var(--good-soft)}
+.type-in.bad{border-color:var(--bad);background:var(--bad-soft)}
+.tiles{display:flex;flex-wrap:wrap;gap:8px;min-height:62px;padding:10px;border-radius:12px}
+.tiles.line{border:2px dashed var(--line)}
+.tiles.line.ok{border-color:var(--good);background:var(--good-soft)}
+.tiles.line.bad{border-color:var(--bad);background:var(--bad-soft)}
+.tile{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 12px;display:grid;justify-items:center;box-shadow:var(--shadow)}
+.tile .ar{font-size:21px}
+.tile small{font-size:11px}
+.qz-foot{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.feedback{border-radius:12px;padding:12px 14px;display:grid;gap:6px}
+.feedback.good{background:var(--good-soft)} .feedback.bad{background:var(--bad-soft)}
+.feedback>b{font-family:var(--f-display)}
+.fb-ans{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.fb-ans .ar{font-size:22px}
+.ai-out{white-space:pre-wrap}
+.result{display:grid;gap:8px;justify-items:start}
+.score{font:700 64px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.missed{width:100%}
+.miss-row{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line)}
+.miss-row .ar{font-size:20px}
+.kb{display:grid;gap:5px;padding:8px;background:var(--surface-2);border-radius:12px}
+.kb-row{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.kb-k{min-width:34px;height:40px;border:1px solid var(--line);background:var(--surface);border-radius:8px;font-size:20px;padding:0 6px}
+.kb-k.wide{font-family:var(--f-body);font-size:13px;min-width:90px}
+
+/* review card */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 20px 22px;min-height:320px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow);margin-top:6px}
+.card-meta{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.face{flex:1;display:grid;place-items:center;text-align:center;gap:6px}
+.big-ar{font:600 clamp(40px,8vw,64px)/1.5 var(--f-ar)}
+.big-en{font:700 clamp(24px,4.6vw,36px)/1.25 var(--f-display);text-wrap:balance}
+.sub{font-size:18px}
+.answer{border-top:1px dashed var(--line);padding-top:12px;display:grid;gap:6px;text-align:center;justify-items:center}
+.en-ans{font:700 22px/1.3 var(--f-display)}
+.ar-ans{font:600 36px/1.5 var(--f-ar)}
+.actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.actions.one{grid-template-columns:1fr}
+.rate{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 6px;display:grid;gap:2px;font-weight:700}
+.rate small,.rate kbd{font:400 12px var(--f-mono);color:var(--muted)}
+.rate.again{border-color:var(--bad);color:var(--bad)} .rate.hard{border-color:var(--gold);color:var(--gold)}
+.rate.good{border-color:var(--good);color:var(--good)} .rate.easy{border-color:var(--accent);color:var(--accent)}
+.done{display:grid;place-items:center;gap:6px;flex:1;text-align:center}
+.done .kufi,.kufi{font-family:var(--f-kufi);font-weight:700}
+.done .kufi{font-size:44px;color:var(--accent)}
+.hint{font-size:13px;color:var(--muted);text-align:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:8px 12px;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+/* practice */
+.tiles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px;margin:14px 0}
+.tool{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:16px;text-align:left;display:grid;gap:4px;box-shadow:var(--shadow)}
+.tool:hover{border-color:var(--accent)}
+.tool b{font:700 17px var(--f-display)}
+.tool small{color:var(--muted)}
+.conj .conj-ar{font-size:22px}
+.small-ar{font-size:15px!important;color:var(--muted)}
+
+/* tutor */
+.tutor-box{margin-top:14px}
+.scenarios{display:grid;gap:12px}
+.sc-group{display:grid;gap:6px}
+.sc-group>.chipbtn,.sc-group{justify-items:start}
+.sc-group{grid-template-columns:1fr}
+.sc-group .label{margin-bottom:2px}
+.sc-group.current .label{color:var(--accent);font-weight:700}
+.sc-group{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sc-group .label{width:100%}
+.chat-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.chat-head h2{margin:2px 0}
+.chat{display:grid;gap:10px;max-height:min(60vh,560px);overflow-y:auto;padding:10px 2px;margin:10px 0}
+.bubble{max-width:min(92%,640px);border-radius:14px;padding:10px 14px;display:grid;gap:4px}
+.bubble.them{background:var(--accent-soft)}
+.bubble.me{background:var(--surface-2);margin-inline-start:auto}
+.bubble.sys{background:transparent;border:1px dashed var(--line);color:var(--muted);font-size:14px;white-space:pre-wrap}
+.bubble .row{justify-content:space-between;flex-wrap:nowrap}
+.chat-ar{font-size:21px}
+.bubble .linkish{justify-self:start}
+.typing{color:var(--muted);font-style:italic}
+.chat-fb{border-radius:10px;padding:8px 10px;margin-top:6px;display:grid;gap:4px;font-size:14px}
+.chat-fb.good{background:var(--good-soft)} .chat-fb.bad{background:var(--bad-soft)}
+.chat-fb .ar{font-size:19px}
+.chat-bar{display:grid;gap:8px}
+.ai-text{white-space:pre-wrap;line-height:1.7;margin-top:12px}
+.ai-off{max-width:640px}
+.w-in{font-size:18px}
+
+/* settings */
+.set{display:grid;gap:8px;max-width:680px;margin-bottom:16px}
+.set label{font-weight:700;margin-top:6px}
+.franco{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.franco div{background:var(--surface-2);border-radius:10px;padding:8px 10px;display:grid;gap:2px}
+.franco b{font:500 18px var(--f-mono);color:var(--accent)}
+.franco .ar{font-size:20px;text-align:left}
+.franco small{color:var(--muted);font-size:12px}
+@media (max-width:400px){.brand .ar{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 
-<div class="wrap">
-  <header class="top">
-    <div class="brand">
-      <h1>Yalla Masri</h1><span class="kufi ar" lang="ar">يلا مصري</span>
-      <p>Egyptian Arabic the way Cairo speaks it: flashcards that space themselves out, quick quizzes, and a phrasebook.</p>
-    </div>
-    <div class="stats" aria-live="polite">
-      <div class="stat streak"><b id="st-streak">0</b><span>Day streak</span></div>
-      <div class="stat"><b id="st-today">0</b><span>Reviewed today</span></div>
-      <div class="stat"><b id="st-known">0</b><span>Words known</span></div>
+<div class="app">
+  <header class="topbar">
+    <div class="topbar-in">
+      <button class="brand" type="button" data-nav="home" aria-label="Yalla Masri home"><b>Yalla Masri</b><span class="ar" lang="ar">يلا مصري</span></button>
+      <nav class="nav" aria-label="Main">
+        <button type="button" data-nav="home">Home</button>
+        <button type="button" data-nav="course">Course</button>
+        <button type="button" data-nav="script">Alphabet</button>
+        <button type="button" data-nav="review">Review</button>
+        <button type="button" data-nav="practice">Practice</button>
+        <button type="button" data-nav="tutor">Tutor</button>
+      </nav>
+      <div id="hdr-stats" aria-live="polite"></div>
+      <button class="gear" type="button" data-nav="settings" aria-label="Settings" title="Settings">⚙</button>
     </div>
   </header>
-
-  <nav class="tabs" role="tablist" aria-label="Sections">
-    <button role="tab" id="tab-learn" aria-controls="view-learn" aria-selected="true">Flashcards</button>
-    <button role="tab" id="tab-quiz" aria-controls="view-quiz" aria-selected="false">Quiz</button>
-    <button role="tab" id="tab-book" aria-controls="view-book" aria-selected="false">Phrasebook</button>
-    <button role="tab" id="tab-guide" aria-controls="view-guide" aria-selected="false">Sounds &amp; grammar</button>
+  <main id="main" tabindex="-1"></main>
+  <nav class="bottomnav" aria-label="Main">
+    <button type="button" data-nav="home"><span aria-hidden="true">⌂</span>Home</button>
+    <button type="button" data-nav="course"><span aria-hidden="true">▤</span>Course</button>
+    <button type="button" data-nav="review"><span aria-hidden="true">↻</span>Review</button>
+    <button type="button" data-nav="practice"><span aria-hidden="true">⚡</span>Practice</button>
+    <button type="button" data-nav="tutor"><span aria-hidden="true">💬</span>Tutor</button>
   </nav>
-
-  <!-- FLASHCARDS -->
-  <section id="view-learn" role="tabpanel" aria-labelledby="tab-learn" class="grid">
-    <div style="display:grid;gap:14px">
-      <div class="bar">
-        <label class="label" for="deck">Deck</label>
-        <select id="deck"></select>
-        <div class="seg" role="group" aria-label="Card direction">
-          <button id="dir-ar" aria-pressed="true">Arabic → English</button>
-          <button id="dir-en" aria-pressed="false">English → Arabic</button>
-        </div>
-        <label class="check"><input type="checkbox" id="show-tr" checked> Show transliteration</label>
-      </div>
-      <div class="card" id="card"></div>
-      <div id="card-actions"></div>
-      <p class="hint">Keys: <b>Space</b> shows the answer, <b>1–4</b> rate it, <b>S</b> plays the audio.</p>
-    </div>
-    <aside style="display:grid;gap:16px">
-      <div class="panel">
-        <h2>Your progress</h2>
-        <div class="legend"><span class="k">Known</span><span class="l">Learning</span><span>New</span></div>
-        <div class="prog" id="prog" style="margin-top:12px"></div>
-      </div>
-      <div class="panel">
-        <h2>Franco-Arabic numbers</h2>
-        <p class="note" style="margin:0 0 10px">Egyptians text in Latin letters and use digits for sounds English lacks. Transliterations here use the same system.</p>
-        <div class="franco">
-          <div><b>2</b><span class="ar" lang="ar">ء ق</span><small>glottal stop</small></div>
-          <div><b>3</b><span class="ar" lang="ar">ع</span><small>throat squeeze</small></div>
-          <div><b>7</b><span class="ar" lang="ar">ح</span><small>breathy h</small></div>
-          <div><b>kh</b><span class="ar" lang="ar">خ</span><small>also “5”</small></div>
-          <div><b>gh</b><span class="ar" lang="ar">غ</span><small>gargled r</small></div>
-          <div><b>g</b><span class="ar" lang="ar">ج</span><small>hard g</small></div>
-        </div>
-      </div>
-    </aside>
-  </section>
-
-  <!-- QUIZ -->
-  <section id="view-quiz" role="tabpanel" aria-labelledby="tab-quiz" hidden>
-    <div class="panel" id="quiz"></div>
-  </section>
-
-  <!-- PHRASEBOOK -->
-  <section id="view-book" role="tabpanel" aria-labelledby="tab-book" hidden>
-    <div class="panel" style="display:grid;gap:12px">
-      <div class="bar">
-        <input type="search" id="search" placeholder="Search Arabic, Franco or English…" aria-label="Search the phrasebook" style="flex:1;min-width:0">
-        <span class="label" id="count"></span>
-      </div>
-      <div class="chips" id="chips" role="group" aria-label="Filter by topic"></div>
-      <div class="list" id="list"></div>
-    </div>
-  </section>
-
-  <!-- GUIDE -->
-  <section id="view-guide" role="tabpanel" aria-labelledby="tab-guide" hidden>
-    <div class="guide">
-      <div class="panel">
-        <h2>How Egyptian sounds differ</h2>
-        <p>Egyptian Arabic (<span class="ar" lang="ar">مصري</span>, <span class="tr">masri</span>) is the most widely understood dialect in the Arab world, thanks to Egyptian film and TV. It is written with the same letters as Modern Standard Arabic (MSA), but several letters are said differently.</p>
-        <div class="tbl"><table>
-          <thead><tr><th>Letter</th><th>MSA</th><th>Cairo</th><th>Example</th></tr></thead>
-          <tbody>
-            <tr><td class="ar" lang="ar">ج</td><td>j</td><td><b>g</b></td><td><span class="ar" lang="ar">جميل</span> <span class="tr">gamiil</span></td></tr>
-            <tr><td class="ar" lang="ar">ق</td><td>q</td><td><b>2</b> (stop)</td><td><span class="ar" lang="ar">قهوة</span> <span class="tr">2ahwa</span></td></tr>
-            <tr><td class="ar" lang="ar">ث</td><td>th</td><td><b>t</b> or <b>s</b></td><td><span class="ar" lang="ar">تلاتة</span> <span class="tr">talaata</span></td></tr>
-            <tr><td class="ar" lang="ar">ذ</td><td>dh</td><td><b>d</b> or <b>z</b></td><td><span class="ar" lang="ar">دهب</span> <span class="tr">dahab</span></td></tr>
-          </tbody>
-        </table></div>
-      </div>
-      <div class="panel">
-        <h2>Grammar in five rules</h2>
-        <ul>
-          <li><b>Present tense takes b-.</b> <span class="tr">bashrab</span> “I drink”, <span class="tr">bitishrab</span> “you drink”.</li>
-          <li><b>Future takes ha-.</b> <span class="tr">hashrab</span> “I will drink”.</li>
-          <li><b>Negate verbs with ma-…-sh.</b> <span class="tr">mabashrabsh</span> “I don't drink”. Negate everything else with <span class="tr">mish</span>: <span class="tr">mish 3aarif</span> “I don't know”.</li>
-          <li><b>Question words go at the end.</b> <span class="tr">ismak eh?</span> “your name what?”, <span class="tr">el-7ammaam feen?</span> “the bathroom where?”</li>
-          <li><b>“This” follows the noun.</b> <span class="tr">el-kitaab da</span> “this book”, <span class="tr">el-3arabeyya di</span> “this car”.</li>
-        </ul>
-      </div>
-      <div class="panel">
-        <h2>Pronouns</h2>
-        <div class="tbl"><table>
-          <thead><tr><th>English</th><th>Arabic</th><th>Franco</th></tr></thead>
-          <tbody id="pronouns"></tbody>
-        </table></div>
-      </div>
-      <div class="panel">
-        <h2>Talking to men and women</h2>
-        <p>Many words change for the person you address. Cards mark these with <b>m</b> / <b>f</b>. Adding <span class="tr">-a</span> usually makes the feminine: <span class="tr">3aayiz → 3ayza</span> (want), <span class="tr">aasif → asfa</span> (sorry). Addressing a woman, <span class="tr">-ak</span> becomes <span class="tr">-ik</span>: <span class="tr">ezzayak → ezzayik</span>.</p>
-        <h3>About the audio</h3>
-        <p class="voice-note" id="voice-note">Checking for an Arabic voice on this device…</p>
-      </div>
-    </div>
-  </section>
-
-  <footer>Progress is saved in this browser only. <button class="btn ghost" id="reset" style="padding:4px 10px;font-size:13px">Reset progress</button> <span id="reset-confirm" hidden>Erase all progress? <button class="btn ghost" id="reset-yes" style="padding:4px 10px;font-size:13px;color:var(--bad)">Erase</button> <button class="btn ghost" id="reset-no" style="padding:4px 10px;font-size:13px">Keep</button></span></footer>
 </div>
 
-<script>
-(() => {
-// ---------- data: [arabic, franco, english, note?] ----------
-const DECKS = {
-  greet: { label: "Greetings", items: [
-    ["أهلاً", "ahlan", "Hi / welcome", "Reply: أهلاً بيك (ahlan bik) to a man, أهلاً بيكي (ahlan biki) to a woman."],
-    ["السلام عليكم", "es-salaamu 3aleekum", "Peace be upon you (hello)", "Reply: وعليكم السلام (wa 3aleekum es-salaam)."],
-    ["صباح الخير", "sabaa7 el-kheer", "Good morning", "Reply: صباح النور (sabaa7 en-nuur), “morning of light”."],
-    ["مساء الخير", "masaa2 el-kheer", "Good evening", "Reply: مساء النور (masaa2 en-nuur)."],
-    ["إزيك؟", "ezzayak? / ezzayik?", "How are you? (m / f)"],
-    ["عامل إيه؟", "3aamil eh? / 3amla eh?", "How are you doing? (m / f)"],
-    ["الحمد لله", "el-7amdu lillah", "Thank God (I'm fine)", "The standard answer to “how are you?”"],
-    ["تمام", "tamaam", "Fine / great / all good"],
-    ["اسمك إيه؟", "ismak eh? / ismik eh?", "What's your name? (m / f)"],
-    ["اسمي ...", "ismi ...", "My name is ..."],
-    ["تشرفنا", "itsharrafna", "Nice to meet you"],
-    ["مع السلامة", "ma3a s-salaama", "Goodbye"],
-    ["تصبح على خير", "tesba7 3ala kheer", "Good night (to a man)", "To a woman: تصبحي على خير (tesba7i 3ala kheer)."],
-  ]},
-  basics: { label: "Everyday words", items: [
-    ["أيوه", "aywa", "Yes"],
-    ["لأ", "la2", "No"],
-    ["شكراً", "shukran", "Thank you"],
-    ["عفواً", "3afwan", "You're welcome / pardon"],
-    ["لو سمحت", "law sama7t / law sama7ti", "Please / excuse me (m / f)", "The everyday “please”, e.g. to get a waiter's attention."],
-    ["معلش", "ma3lesh", "Sorry / never mind / it's OK", "Possibly the most useful word in Cairo."],
-    ["آسف", "aasif / asfa", "I'm sorry (said by m / f)"],
-    ["ماشي", "maashi", "OK / fine", "Literally “walking”."],
-    ["خلاص", "khalaas", "Done / enough / OK then"],
-    ["يلا", "yalla", "Come on / let's go"],
-    ["إن شاء الله", "en shaa2 allah", "God willing", "Used for anything in the future, from “see you tomorrow” to “maybe”."],
-    ["مش عارف", "mish 3aarif / mish 3arfa", "I don't know (said by m / f)"],
-    ["مش فاهم", "mish faahim / mish fahma", "I don't understand (said by m / f)"],
-    ["أوي", "awi", "Very", "Comes after the adjective: حلو أوي (7elw awi), very nice."],
-    ["شوية", "shwayya", "A little"],
-    ["كمان", "kamaan", "Also / more / again"],
-    ["بس", "bass", "Only / but / that's enough"],
-    ["كده", "keda", "Like this / so"],
-    ["عايز", "3aayiz / 3ayza", "I want (said by m / f)", "عايز شاي (3aayiz shaay), I want tea."],
-    ["ده / دي / دول", "da / di / dool", "This (m) / this (f) / these"],
-    ["هنا / هناك", "hena / henaak", "Here / there"],
-  ]},
-  questions: { label: "Questions", items: [
-    ["إيه؟", "eh?", "What?"],
-    ["فين؟", "feen?", "Where?"],
-    ["مين؟", "meen?", "Who?"],
-    ["إمتى؟", "emta?", "When?"],
-    ["ليه؟", "leeh?", "Why?"],
-    ["إزاي؟", "ezzaay?", "How?"],
-    ["كام؟", "kaam?", "How many?"],
-    ["بكام؟", "bikaam?", "How much is it?", "Point and ask: ده بكام؟ (da bikaam?)"],
-    ["الحمام فين؟", "el-7ammaam feen?", "Where's the bathroom?"],
-    ["إيه ده؟", "eh da?", "What's this?"],
-    ["بتتكلم إنجليزي؟", "bitetkallim engeleezi?", "Do you speak English? (to a man)", "To a woman: بتتكلمي (bitetkallimi)."],
-  ]},
-  numbers: { label: "Numbers", items: [
-    ["واحد ١", "waa7id", "One (1)"],
-    ["اتنين ٢", "etneen", "Two (2)"],
-    ["تلاتة ٣", "talaata", "Three (3)"],
-    ["أربعة ٤", "arba3a", "Four (4)"],
-    ["خمسة ٥", "khamsa", "Five (5)"],
-    ["ستة ٦", "sitta", "Six (6)"],
-    ["سبعة ٧", "sab3a", "Seven (7)"],
-    ["تمانية ٨", "tamanya", "Eight (8)"],
-    ["تسعة ٩", "tes3a", "Nine (9)"],
-    ["عشرة ١٠", "3ashara", "Ten (10)"],
-    ["عشرين ٢٠", "3ishreen", "Twenty (20)"],
-    ["مية ١٠٠", "meyya", "One hundred (100)", "Same spelling as water (مية, mayya); context tells them apart."],
-    ["ألف ١٠٠٠", "alf", "One thousand (1000)"],
-    ["جنيه", "gineeh", "Egyptian pound", "Prices: خمسين جنيه (khamseen gineeh), 50 pounds."],
-  ]},
-  food: { label: "Food & drink", items: [
-    ["مية", "mayya", "Water"],
-    ["عيش", "3eesh", "Bread", "Literally “life”."],
-    ["قهوة", "2ahwa", "Coffee / café", "ق is a glottal stop in Cairo, so qahwa becomes 2ahwa."],
-    ["شاي", "shaay", "Tea"],
-    ["لبن", "laban", "Milk"],
-    ["سكر", "sukkar", "Sugar", "شاي من غير سكر (shaay min gheer sukkar), tea without sugar."],
-    ["فول", "fuul", "Fava beans", "The classic Egyptian breakfast."],
-    ["طعمية", "ta3meyya", "Falafel", "Egyptian falafel is made with fava beans, not chickpeas."],
-    ["كشري", "koshari", "Koshari", "Rice, lentils, pasta, chickpeas, tomato sauce and fried onions."],
-    ["فراخ", "feraakh", "Chicken"],
-    ["لحمة", "la7ma", "Meat"],
-    ["رز", "rozz", "Rice"],
-    ["جعان", "ga3aan / ga3aana", "Hungry (m / f)"],
-    ["عطشان", "3atshaan / 3atshaana", "Thirsty (m / f)"],
-    ["الحساب لو سمحت", "el-7esaab law sama7t", "The check, please"],
-    ["حلو", "7elw / 7elwa", "Sweet / nice / pretty (m / f)"],
-  ]},
-  travel: { label: "Getting around", items: [
-    ["شارع", "shaare3", "Street"],
-    ["محطة", "ma7atta", "Station"],
-    ["مترو", "metro", "Metro"],
-    ["يمين", "yimiin", "Right"],
-    ["شمال", "shimaal", "Left", "Also means “north”."],
-    ["على طول", "3ala tuul", "Straight ahead", "Also “always”, “right away”."],
-    ["قريب", "2urayyib", "Near"],
-    ["بعيد", "bi3iid", "Far"],
-    ["على جنب لو سمحت", "3ala gamb law sama7t", "Pull over here, please", "What you tell a taxi driver when you arrive."],
-    ["أنا رايح ...", "ana raaye7 ... / ana ray7a ...", "I'm going to ... (said by m / f)"],
-    ["فلوس", "feluus", "Money"],
-    ["غالي", "ghaali", "Expensive"],
-    ["رخيص", "rekhiis", "Cheap"],
-  ]},
-  time: { label: "Time", items: [
-    ["النهارده", "ennaharda", "Today"],
-    ["بكرة", "bukra", "Tomorrow"],
-    ["إمبارح", "embaare7", "Yesterday"],
-    ["دلوقتي", "dilwa2ti", "Now"],
-    ["بعدين", "ba3deen", "Later / then"],
-    ["الساعة كام؟", "es-saa3a kaam?", "What time is it?"],
-    ["يوم", "yoom", "Day"],
-    ["أسبوع", "usbuu3", "Week"],
-    ["شهر", "shahr", "Month"],
-    ["سنة", "sana", "Year"],
-    ["بدري", "badri", "Early"],
-    ["متأخر", "met2akhkhar", "Late"],
-  ]},
-  people: { label: "People", items: [
-    ["ماما", "maama", "Mom"],
-    ["بابا", "baaba", "Dad"],
-    ["أخويا", "akhuuya", "My brother"],
-    ["أختي", "ukhti", "My sister"],
-    ["ابني", "ebni", "My son"],
-    ["بنتي", "binti", "My daughter", "بنت (bint) alone means “girl”."],
-    ["راجل", "raagil", "Man"],
-    ["ست", "sitt", "Woman / lady"],
-    ["صاحبي", "saa7bi", "My friend (m)", "Female friend: صاحبتي (sa7biti)."],
-    ["يا عم", "ya 3amm", "Hey man", "Literally “O uncle”; friendly, informal."],
-    ["يا باشا", "ya basha", "Sir / boss", "Playful respect, from the Ottoman title."],
-  ]},
-  verbs: { label: "Verbs", items: [
-    ["باكل", "baakul", "I eat"],
-    ["بشرب", "bashrab", "I drink"],
-    ["بروح", "baruu7", "I go"],
-    ["بحب", "ba7ebb", "I love / I like", "بحب مصر (ba7ebb masr), I love Egypt."],
-    ["بتكلم عربي شوية", "batkallim 3arabi shwayya", "I speak a little Arabic"],
-    ["عايز أروح", "3aayiz aruu7", "I want to go (m)"],
-    ["هروح", "haruu7", "I will go", "Future = ha- + verb."],
-    ["رحت", "ro7t", "I went"],
-    ["استنى", "estanna", "Wait! (to a man)", "To a woman: استني (estanni)."],
-    ["تعالى", "ta3aala", "Come here (to a man)", "To a woman: تعالي (ta3aali)."],
-    ["شوف", "shuuf", "Look (to a man)"],
-    ["أنا جاي", "ana gaay / ana gaya", "I'm coming (said by m / f)"],
-  ]},
-  adj: { label: "Describing", items: [
-    ["كويس", "kwayyis / kwayyisa", "Good (m / f)"],
-    ["وحش", "we7esh", "Bad"],
-    ["كبير", "kebiir", "Big / old (people)"],
-    ["صغير", "sughayyar", "Small / young"],
-    ["جديد", "gediid", "New"],
-    ["قديم", "2adiim", "Old (things)"],
-    ["جميل", "gamiil", "Beautiful"],
-    ["حر", "7arr", "Hot (weather)"],
-    ["برد", "bard", "Cold (weather)"],
-    ["سهل", "sahl", "Easy"],
-    ["صعب", "sa3b", "Difficult"],
-  ]},
-  expr: { label: "Cairo expressions", items: [
-    ["والله", "wallahi", "I swear / really", "Adds weight to anything."],
-    ["بجد؟", "bigadd?", "Seriously?"],
-    ["مفيش مشكلة", "mafiish mushkila", "No problem"],
-    ["ولا يهمك", "wala yhimmak", "Don't worry about it (to a man)"],
-    ["على فكرة", "3ala fikra", "By the way"],
-    ["مش مهم", "mish mohimm", "It doesn't matter"],
-    ["فكك", "fukkak", "Forget it / let it go (to a man)", "Slang. Full phrase: فكك منه (fukkak minnu), forget about him."],
-    ["حمد الله على السلامة", "7amdella 3ala s-salaama", "Welcome back / glad you got here safe"],
-    ["ربنا يخليك", "rabbena ykhalliik", "God keep you (warm thanks)"],
-    ["كل سنة وإنت طيب", "kull sana w enta tayyib", "Happy holidays / happy birthday (to a man)"],
-    ["يا سلام", "ya salaam", "Wow! / how lovely"],
-    ["إيه الأخبار؟", "eh el-akhbaar?", "What's new?"],
-  ]},
-};
-const PRONOUNS = [
-  ["I", "أنا", "ana"], ["You (m)", "إنت", "enta"], ["You (f)", "إنتي", "enti"],
-  ["He", "هو", "howwa"], ["She", "هي", "heyya"], ["We", "إحنا", "e7na"],
-  ["You (plural)", "إنتو", "entu"], ["They", "هم", "homma"],
-];
-
-const CARDS = [];
-for (const [key, d] of Object.entries(DECKS)) d.items.forEach(([ar, tr, en, note]) =>
-  CARDS.push({ id: key + ":" + ar, deck: key, ar, tr, en, note: note || "" }));
-const BY_ID = Object.fromEntries(CARDS.map(c => [c.id, c]));
-
-// ---------- storage ----------
-const KEY = "yalla-masri-v1";
-const blank = () => ({ srs: {}, deck: "all", dir: "ar", showTr: true, stats: { streak: 0, lastDay: "", today: 0 } });
-let S = blank();
-try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(blank(), JSON.parse(raw)); } catch (e) {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
-
-// ---------- spaced repetition (Leitner boxes 0–5) ----------
-const DAY = 864e5, IVL = [0, 1, 3, 7, 16, 35];
-const boxOf = id => (S.srs[id] ? S.srs[id].box : -1);
-const status = id => { const b = boxOf(id); return b < 0 ? "new" : b >= 3 ? "known" : "learning"; };
-function nextState(id, g) {
-  const s = S.srs[id] || { box: 0, seen: 0 };
-  let box = s.box, days;
-  if (g === 0) { box = 0; days = 0; }
-  else if (g === 1) { box = Math.max(1, box); days = IVL[box] / 2; }
-  else if (g === 2) { box = Math.min(5, box + 1); days = IVL[box]; }
-  else { box = Math.min(5, box + 2); days = IVL[box] * 1.3; }
-  return { box, days, due: Date.now() + days * DAY, seen: s.seen + 1 };
-}
-const fmtDays = d => d === 0 ? "now" : d < 1 ? Math.round(d * 24) + "h" : Math.round(d) + "d";
-const dayKey = () => { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); };
-function bumpStats() {
-  const st = S.stats, today = dayKey();
-  if (st.lastDay !== today) {
-    const y = new Date(Date.now() - DAY); const yk = y.getFullYear() + "-" + (y.getMonth() + 1) + "-" + y.getDate();
-    st.streak = st.lastDay === yk ? st.streak + 1 : 1; st.lastDay = today; st.today = 0;
-  }
-  st.today++;
-}
-
-// ---------- audio ----------
-let arVoice = null;
-const hasTTS = "speechSynthesis" in window;
-function pickVoice() {
-  if (!hasTTS) return;
-  const vs = speechSynthesis.getVoices();
-  arVoice = vs.find(v => /^ar[-_]EG/i.test(v.lang)) || vs.find(v => /^ar/i.test(v.lang)) || null;
-  const n = document.getElementById("voice-note");
-  n.textContent = !vs.length ? "Audio uses your device's text-to-speech. If nothing plays, your device has no Arabic voice installed."
-    : arVoice ? `Audio uses your device's “${arVoice.name}” voice (${arVoice.lang}). ${/EG/i.test(arVoice.lang) ? "It's an Egyptian voice." : "It is not Egyptian, so it may say ج as “j” and ق as “q”. Trust the Franco spelling."}`
-    : "No Arabic voice was found on this device, so audio may be silent. Install an Arabic voice in your system settings to hear the words.";
-}
-if (hasTTS) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
-else document.getElementById("voice-note").textContent = "This browser has no text-to-speech, so audio buttons are hidden.";
-function speak(text) {
-  if (!hasTTS) return;
-  try {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text.replace(/[٠-٩]+/g, "").replace(/\.\.\./g, ""));
-    u.lang = arVoice ? arVoice.lang : "ar-EG"; if (arVoice) u.voice = arVoice; u.rate = 0.85;
-    speechSynthesis.speak(u);
-  } catch (e) {}
-}
-const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
-function speakBtn(text) {
-  const b = document.createElement("button");
-  b.className = "speak"; b.type = "button"; b.innerHTML = ICON; b.setAttribute("aria-label", "Play audio"); b.hidden = !hasTTS;
-  b.addEventListener("click", e => { e.stopPropagation(); speak(text); });
-  return b;
-}
-
-// ---------- tiny DOM helper ----------
-function h(tag, attrs, ...kids) {
-  const el = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs || {})) {
-    if (k === "class") el.className = v; else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
-    else if (v !== false && v != null) el.setAttribute(k, v);
-  }
-  for (const k of kids.flat()) if (k != null && k !== false) el.append(k.nodeType ? k : String(k));
-  return el;
-}
-const arSpan = (t, cls) => h("span", { class: "ar " + (cls || ""), lang: "ar", dir: "rtl" }, t);
-const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-
-// ---------- header + progress ----------
-function renderStats() {
-  const st = S.stats, today = dayKey();
-  document.getElementById("st-streak").textContent = st.lastDay === today || st.lastDay === (() => { const y = new Date(Date.now() - DAY); return y.getFullYear() + "-" + (y.getMonth() + 1) + "-" + y.getDate(); })() ? st.streak : 0;
-  document.getElementById("st-today").textContent = st.lastDay === today ? st.today : 0;
-  document.getElementById("st-known").textContent = CARDS.filter(c => status(c.id) === "known").length + " / " + CARDS.length;
-  const prog = document.getElementById("prog"); prog.replaceChildren();
-  for (const [key, d] of Object.entries(DECKS)) {
-    const cs = CARDS.filter(c => c.deck === key), n = cs.length;
-    const k = cs.filter(c => status(c.id) === "known").length, l = cs.filter(c => status(c.id) === "learning").length;
-    prog.append(h("div", { class: "prog-row" }, h("span", {}, d.label), h("span", {}, `${k}/${n}`),
-      h("div", { class: "meter", role: "img", "aria-label": `${k} known, ${l} learning, ${n - k - l} new` },
-        h("i", { class: "k", style: `width:${k / n * 100}%` }), h("i", { class: "l", style: `width:${l / n * 100}%` }))));
-  }
-}
-
-// ---------- flashcards ----------
-const NEW_PER_SESSION = 8;
-let queue = [], cur = null, revealed = false, practice = false;
-const deckSel = document.getElementById("deck");
-deckSel.append(h("option", { value: "all" }, "All decks"), ...Object.entries(DECKS).map(([k, d]) => h("option", { value: k }, d.label)));
-deckSel.value = S.deck in DECKS ? S.deck : "all";
-const pool = () => S.deck === "all" ? CARDS : CARDS.filter(c => c.deck === S.deck);
-function buildQueue() {
-  const now = Date.now(), p = pool();
-  const due = p.filter(c => S.srs[c.id] && S.srs[c.id].due <= now).sort((a, b) => S.srs[a.id].due - S.srs[b.id].due);
-  const fresh = p.filter(c => !S.srs[c.id]).slice(0, NEW_PER_SESSION);
-  queue = [...due, ...fresh]; practice = false;
-  nextCard();
-}
-function nextCard() { cur = queue.shift() || null; revealed = false; renderCard(); }
-
-function ladder(id) {
-  const b = boxOf(id), el = h("div", { class: "ladder", "aria-label": b < 0 ? "New card" : `Level ${b} of 5` });
-  for (let i = 1; i <= 5; i++) el.append(h("i", { class: i <= b ? "on" : "" }));
-  el.append(h("small", {}, b < 0 ? "new" : b === 0 ? "relearn" : "next " + IVL[b] + "d"));
-  return el;
-}
-function renderCard() {
-  const card = document.getElementById("card"), act = document.getElementById("card-actions");
-  card.replaceChildren(); act.replaceChildren();
-  if (!cur) {
-    const soon = pool().filter(c => S.srs[c.id]).map(c => S.srs[c.id].due).sort((a, b) => a - b)[0];
-    card.append(h("div", { class: "done" },
-      arSpan("خلاص!", "kufi"), h("div", {}, h("b", {}, "All caught up. "), "Khalaas: nothing is due in this deck."),
-      h("div", { class: "note" }, soon ? `Next review ${fmtDays(Math.max(0, (soon - Date.now()) / DAY))}. You can keep practicing now; ratings still count.` : "Pick another deck or practice a random set.")));
-    act.className = "actions one";
-    act.append(h("button", { class: "btn primary", onclick: () => { queue = shuffle(pool()).slice(0, 10); practice = true; nextCard(); } }, "Practice 10 random cards"));
-    return;
-  }
-  const c = cur, arFront = S.dir === "ar";
-  card.append(h("div", { class: "card-meta" }, h("span", { class: "chip" }, DECKS[c.deck].label + (practice ? " · practice" : "")), ladder(c.id)));
-  const face = h("div", { class: "face" });
-  if (arFront) {
-    face.append(h("div", { class: "row" }, arSpan(c.ar, "big-ar"), speakBtn(c.ar)));
-    if (S.showTr) face.append(h("div", { class: "tr sub" }, c.tr));
-  } else {
-    face.append(h("div", { class: "big-en" }, c.en));
-  }
-  card.append(face);
-  if (revealed) {
-    const ans = h("div", { class: "answer" });
-    if (arFront) ans.append(h("div", { class: "en" }, c.en));
-    else ans.append(h("div", { class: "row", style: "display:flex;justify-content:center;align-items:center;gap:10px" }, arSpan(c.ar, "ar-ans"), speakBtn(c.ar)), h("div", { class: "tr sub" }, c.tr));
-    if (c.note) ans.append(h("p", { class: "note" }, c.note));
-    card.append(ans);
-    act.className = "actions";
-    [["Again", "again"], ["Hard", "hard"], ["Good", "good"], ["Easy", "easy"]].forEach(([lab, cls], g) =>
-      act.append(h("button", { class: "rate " + cls, onclick: () => rate(g) }, lab, h("small", {}, fmtDays(nextState(c.id, g).days)), h("kbd", {}, g + 1))));
-  } else {
-    act.className = "actions one";
-    act.append(h("button", { class: "btn primary", onclick: reveal }, "Show answer"));
-  }
-}
-function reveal() { if (!cur || revealed) return; revealed = true; renderCard(); if (S.dir === "en") speak(cur.ar); }
-function rate(g) {
-  if (!cur || !revealed) return;
-  const n = nextState(cur.id, g);
-  S.srs[cur.id] = { box: n.box, due: n.due, seen: n.seen };
-  if (g === 0) queue.splice(Math.min(queue.length, 3), 0, cur);
-  bumpStats(); save(); renderStats(); nextCard();
-}
-deckSel.addEventListener("change", () => { S.deck = deckSel.value; save(); buildQueue(); });
-const dirAr = document.getElementById("dir-ar"), dirEn = document.getElementById("dir-en");
-function setDir(d) { S.dir = d; dirAr.setAttribute("aria-pressed", d === "ar"); dirEn.setAttribute("aria-pressed", d === "en"); save(); revealed = false; renderCard(); }
-dirAr.onclick = () => setDir("ar"); dirEn.onclick = () => setDir("en");
-const trBox = document.getElementById("show-tr");
-trBox.checked = S.showTr; trBox.onchange = () => { S.showTr = trBox.checked; save(); renderCard(); };
-
-// ---------- quiz ----------
-const QN = 10;
-let Q = null;
-function quizPool() { return S.deck === "all" ? CARDS : CARDS.filter(c => c.deck === S.deck); }
-function startQuiz() {
-  const p = quizPool();
-  const qs = shuffle(p).slice(0, Math.min(QN, p.length)).map(c => {
-    const same = CARDS.filter(x => x.deck === c.deck && x.id !== c.id && x.en !== c.en);
-    const other = CARDS.filter(x => x.deck !== c.deck);
-    const wrong = shuffle(same).slice(0, 3);
-    while (wrong.length < 3) wrong.push(shuffle(other)[0]);
-    return { c, mode: Math.random() < 0.5 ? "ar" : "en", opts: shuffle([c, ...wrong]) };
-  });
-  Q = { qs, i: 0, score: 0, picked: null, misses: [] };
-  renderQuiz();
-}
-function renderQuiz() {
-  const root = document.getElementById("quiz"); root.replaceChildren();
-  if (!Q) {
-    root.append(h("div", { class: "quiz-q" },
-      h("h2", {}, "Quick quiz"),
-      h("p", { class: "note", style: "margin:0" }, `${QN} multiple-choice questions from your current deck (${S.deck === "all" ? "all decks" : DECKS[S.deck].label}). Change the deck on the Flashcards tab. Words you miss come back in your next flashcard session.`),
-      h("div", {}, h("button", { class: "btn primary", onclick: startQuiz }, "Start quiz"))));
-    return;
-  }
-  if (Q.i >= Q.qs.length) {
-    const pct = Math.round(Q.score / Q.qs.length * 100);
-    root.append(h("div", { class: "quiz-q" },
-      h("div", { class: "label" }, "Result"),
-      h("div", { class: "score" }, `${Q.score}/${Q.qs.length}`),
-      h("p", { style: "margin:0" }, pct === 100 ? "Perfect. " : pct >= 70 ? "Nice work. " : "Keep going. ", arSpan(pct >= 70 ? "برافو!" : "يلا تاني!"), " ", h("span", { class: "tr" }, pct >= 70 ? "bravo!" : "yalla taani! (again!)")),
-      Q.misses.length ? h("div", {}, h("h3", {}, "Review these"), h("div", { class: "miss" }, Q.misses.map(c => h("div", {}, arSpan(c.ar), h("span", { class: "tr" }, c.tr), h("span", {}, c.en))))) : null,
-      h("div", { class: "bar" }, h("button", { class: "btn primary", onclick: startQuiz }, "New quiz"))));
-    return;
-  }
-  const q = Q.qs[Q.i], c = q.c;
-  const prompt = h("div", { class: "qprompt" });
-  if (q.mode === "ar") {
-    prompt.append(h("div", { class: "label" }, "What does this mean?"), h("div", { class: "row", style: "display:flex;gap:10px;align-items:center" }, arSpan(c.ar, "big-ar"), speakBtn(c.ar)));
-    if (S.showTr) prompt.append(h("div", { class: "tr sub" }, c.tr));
-  } else {
-    prompt.append(h("div", { class: "label" }, "How do you say this?"), h("div", { class: "big-en" }, c.en));
-  }
-  const face = h("div", { class: "face" }, prompt);
-  const opts = h("div", { class: "opts" }, q.opts.map((o, k) => {
-    const b = h("button", { class: "opt", onclick: () => pick(k) }, h("kbd", {}, k + 1),
-      q.mode === "ar" ? h("span", {}, o.en) : h("span", { style: "display:grid" }, arSpan(o.ar), S.showTr ? h("span", { class: "tr" }, o.tr) : null));
-    if (Q.picked != null) { b.disabled = true; if (o === c) b.classList.add("right"); else if (k === Q.picked) b.classList.add("wrong"); }
-    return b;
-  }));
-  root.append(h("div", { class: "quiz-q" },
-    h("div", { class: "qhead" }, h("span", { class: "label" }, `Question ${Q.i + 1} of ${Q.qs.length}`), h("span", { class: "label" }, `Score ${Q.score}`)),
-    h("div", { class: "pbar" }, h("i", { style: `width:${Q.i / Q.qs.length * 100}%` })),
-    face, opts,
-    Q.picked != null ? h("div", { class: "bar", style: "justify-content:space-between" },
-      h("span", { class: "note", style: "margin:0" }, c.note || ""), h("button", { class: "btn primary", id: "qnext", onclick: () => { Q.i++; Q.picked = null; renderQuiz(); } }, "Next (Enter)")) : null));
-}
-function pick(k) {
-  if (!Q || Q.picked != null || Q.i >= Q.qs.length) return;
-  const q = Q.qs[Q.i]; Q.picked = k;
-  if (q.opts[k] === q.c) Q.score++;
-  else { Q.misses.push(q.c); const s = S.srs[q.c.id]; S.srs[q.c.id] = { box: 0, due: Date.now(), seen: s ? s.seen : 0 }; save(); renderStats(); }
-  speak(q.c.ar); renderQuiz();
-  const nb = document.getElementById("qnext"); if (nb) nb.focus();
-}
-
-// ---------- phrasebook ----------
-let filter = "all";
-const chips = document.getElementById("chips");
-function renderChips() {
-  chips.replaceChildren(...[["all", "All"], ...Object.entries(DECKS).map(([k, d]) => [k, d.label])].map(([k, lab]) =>
-    h("button", { "aria-pressed": filter === k, onclick: () => { filter = k; renderChips(); renderBook(); } }, lab)));
-}
-const norm = s => s.toLowerCase().replace(/[ً-ْ]/g, "").replace(/[أإآ]/g, "ا");
-function renderBook() {
-  const q = norm(document.getElementById("search").value.trim());
-  const rows = CARDS.filter(c => (filter === "all" || c.deck === filter) && (!q || norm(c.ar + " " + c.tr + " " + c.en + " " + c.note).includes(q)));
-  document.getElementById("count").textContent = rows.length + (rows.length === 1 ? " phrase" : " phrases");
-  const list = document.getElementById("list");
-  list.replaceChildren(...rows.map(c => {
-    const st = status(c.id);
-    return h("div", { class: "item" }, arSpan(c.ar),
-      h("div", {}, h("div", { class: "en" }, c.en), h("div", { class: "tr" }, c.tr)),
-      h("span", { class: "pill " + (st === "known" ? "k" : st === "learning" ? "l" : "") }, st), speakBtn(c.ar),
-      c.note ? h("p", { class: "note" }, c.note) : null);
-  }));
-  if (!rows.length) list.append(h("p", { class: "empty" }, "No phrases match. Try English, Franco (like 7elw) or Arabic."));
-}
-document.getElementById("search").addEventListener("input", renderBook);
-
-// ---------- pronouns ----------
-document.getElementById("pronouns").replaceChildren(...PRONOUNS.map(([en, ar, tr]) =>
-  h("tr", {}, h("td", {}, en), h("td", {}, arSpan(ar)), h("td", { class: "tr" }, tr))));
-
-// ---------- tabs ----------
-const TABS = ["learn", "quiz", "book", "guide"];
-let tab = "learn";
-function setTab(t) {
-  tab = t;
-  TABS.forEach(x => { document.getElementById("tab-" + x).setAttribute("aria-selected", x === t); document.getElementById("view-" + x).hidden = x !== t; });
-  if (t === "quiz") renderQuiz();
-  if (t === "book") renderBook();
-  try { history.replaceState(null, "", "#" + t); } catch (e) {}
-}
-TABS.forEach(x => document.getElementById("tab-" + x).addEventListener("click", () => setTab(x)));
-
-// ---------- keyboard ----------
-document.addEventListener("keydown", e => {
-  if (e.target.matches("input, select, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
-  if (tab === "learn") {
-    if (e.key === " " && cur && !revealed) { e.preventDefault(); reveal(); }
-    else if (/^[1-4]$/.test(e.key) && revealed) rate(+e.key - 1);
-    else if ((e.key === "s" || e.key === "S") && cur) speak(cur.ar);
-  } else if (tab === "quiz" && Q) {
-    if (/^[1-4]$/.test(e.key) && Q.picked == null) pick(+e.key - 1);
-    else if (e.key === "Enter" && Q.picked != null && e.target.id !== "qnext") { Q.i++; Q.picked = null; renderQuiz(); }
-  }
-});
-
-// ---------- reset ----------
-const rc = document.getElementById("reset-confirm");
-document.getElementById("reset").onclick = () => { rc.hidden = false; };
-document.getElementById("reset-no").onclick = () => { rc.hidden = true; };
-document.getElementById("reset-yes").onclick = () => { S = blank(); save(); rc.hidden = true; deckSel.value = "all"; setDir("ar"); trBox.checked = true; Q = null; renderStats(); buildQueue(); renderBook(); };
-
-// ---------- boot ----------
-setDir(S.dir === "en" ? "en" : "ar");
-renderStats(); renderChips(); buildQueue();
-const h0 = (location.hash || "").slice(1); if (TABS.includes(h0)) setTab(h0);
-})();
-</script>
+<script src="js/engine.js"></script>
+<script src="data/script.js"></script>
+<script src="data/a1.js"></script>
+<script src="data/a2.js"></script>
+<script src="data/b1.js"></script>
+<script src="data/b2.js"></script>
+<script src="data/c1.js"></script>
+<script src="data/c2.js"></script>
+<script src="data/wordbank.js"></script>
+<script src="js/core.js"></script>
+<script src="js/questions.js"></script>
+<script src="js/tutor.js"></script>
+<script src="js/views.js"></script>
+<script>APP.boot();</script>
