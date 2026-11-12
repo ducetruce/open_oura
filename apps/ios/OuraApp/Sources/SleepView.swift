@@ -60,6 +60,18 @@ private struct NightDetail: View {
                 }
             }
 
+            if let score = night.sleepScore {
+                Card(title: "Sleep score") {
+                    HStack {
+                        ScoreRing(title: "Sleep", score: score, tint: .indigo)
+                    }
+                    ContributorList(score: score, tint: .indigo)
+                    Text(scoreDisclaimer)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             if night.hasStages {
                 Card(title: "Stages") {
                     Hypnogram(night: night)

@@ -24,7 +24,13 @@ extension DaySummary {
     var title: String {
         midday.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
     }
+
+    var sleepScoreValue: Double? { sleep?.sleepScore.map { Double($0.value) } }
+    var readinessScoreValue: Double? { sleep?.readinessScore.map { Double($0.value) } }
 }
+
+/// Shown wherever a score appears: these are not Oura's numbers.
+let scoreDisclaimer = "Estimates. They combine Oura’s contributor weights with this app’s own curves, so they will not match the official app."
 
 // MARK: Sleep stages
 
@@ -100,6 +106,68 @@ struct Card<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+/// A 0–100 score as a ring. Shows a dash while the score is unavailable.
+struct ScoreRing: View {
+    let title: String
+    let score: Score?
+    let tint: Color
+
+    var body: some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle().stroke(tint.opacity(0.2), lineWidth: 10)
+                Circle()
+                    .trim(from: 0, to: CGFloat(score?.value ?? 0) / 100)
+                    .stroke(tint, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Text(score.map { String($0.value) } ?? "–")
+                    .font(.title.weight(.semibold))
+                    .monospacedDigit()
+            }
+            .frame(width: 96, height: 96)
+            Text(title).font(.subheadline)
+            Text(score?.provisional == true ? "Provisional" : " ")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(spokenValue)
+    }
+
+    private var spokenValue: String {
+        guard let score else { return "Not available" }
+        return score.provisional ? "\(score.value), provisional" : String(score.value)
+    }
+}
+
+/// What went into a score: one bar per contributor.
+struct ContributorList: View {
+    let score: Score
+    let tint: Color
+
+    var body: some View {
+        VStack(spacing: 10) {
+            ForEach(score.contributors, id: \.name) { contributor in
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(contributor.name)
+                        Spacer()
+                        Text(String(contributor.score))
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                    ProgressView(value: Double(contributor.score), total: 100)
+                        .tint(tint)
+                }
+                .font(.callout)
+                .accessibilityElement(children: .combine)
+            }
+        }
     }
 }
 

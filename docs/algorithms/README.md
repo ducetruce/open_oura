@@ -32,6 +32,7 @@ each is ported; this index is the status table.
 | Sleep score + contributors | `ecore_sleep_score_calculate @ 0x1f5c20`; limits `…_init_limits_v2 @ 0x1f5b20` (from age byte) | - | ◐ limits + sleep_timing recovered; contributor mapper `FUN_001f5e64` not in export - needs re-decompile |
 | Sleep debt | `sleep_debt_calculate @ 0x215658` | `oura-analysis::sleep_debt` | ✅ ported + tested |
 | Readiness score + contributors | `readiness_calculate @ 0x20897c`, `recovery_legacy_run @ 0x20b258` | - | ◐ legacy contributor formulas recovered; weight tables `0x17bff8`/`0x17bfdc` + modern `FUN_002094e0` need .rodata dump + re-decompile |
+| **Estimated** Sleep + Readiness scores (iOS app) | recovered combiner weights; contributor curves are **ours**, not ecore's | `oura-core::scores` | ◐ approximate by design, uncalibrated - see [`estimated-scores.md`](estimated-scores.md) |
 | Rest/recovery mode | `rest_recovery_* @ 0x20bf38…` | - | ⏳ to port |
 | Activity score + contributors | `get_activity_score_raw @ 0x1d5788` (per-contributor pw-interp, Y=[0,25,95,100]); combiner `@ 0x1d781c` | - | ◐ contributor curves + X-tables recovered; final-combiner divisor ambiguous - needs careful re-read |
 | Activity targets / cals / MET | `actinfo_target_to_cal @ 0x1cd2c8`, `actinfo_update_5_min_classification @ 0x1cd640` | `oura-analysis::metabolic` | ◐ VO2max/BMR/steps→m ported+tested; MET-class ordering + calorie/step regression best-effort |

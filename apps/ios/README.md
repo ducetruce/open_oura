@@ -3,6 +3,8 @@
 A native iPhone app that reads an Oura ring directly over Bluetooth: no Oura
 account, no cloud, no ML models. Everything stays in a SQLite database on the phone.
 
+- **Scores** - estimated Readiness and Sleep scores with their contributors (see
+  "Scores" below: these are not Oura's numbers).
 - **Today** - sleep, resting heart rate, HRV, blood oxygen, skin temperature and
   activity for a day, with heart-rate / HRV / activity charts.
 - **Sleep** - the night's window, stage hypnogram and breakdown, lowest and average
@@ -72,8 +74,7 @@ history events:
 
 Limits worth knowing:
 
-- **No Readiness / Sleep / Activity scores.** Oura computes those on the phone with
-  proprietary models that are not part of this repository.
+- **Scores are estimates, and there is no Activity score.** See below.
 - **Sleep stages differ from the official app**, which uses its SleepNet model
   rather than the firmware hypnogram. The epoch length of the firmware events is
   not documented, so stage durations are each stage's share of the night scaled to
@@ -82,6 +83,28 @@ Limits worth knowing:
   with no anchor is timed from the moment it was synced and flagged in the app;
   *Set ring clock when syncing* writes an anchor on each sync.
 - Syncing happens while the app is open; there is no background sync.
+
+## Scores
+
+The app shows a **Sleep** and a **Readiness** score, each 0-100 with its
+contributors. They are estimates and will not match the official app:
+
+- Oura's *weights* for combining contributors are known (recovered by regression in
+  [`docs/algorithms/score-weights.md`](../../docs/algorithms/score-weights.md)) and
+  are used as-is.
+- Oura's *curves* for turning a raw metric into each 0-100 contributor are not
+  recoverable from this repository, so `crates/oura-core/src/scores.rs` uses its own,
+  set to general sleep-health guidance. On top of that, the sleep stages feeding
+  them are the firmware's, not SleepNet's.
+- **Sleep** needs a night of at least 3 hours with stages.
+- **Readiness** compares a night with your own trailing 14-night baseline, so it
+  appears after about four synced nights and is marked provisional until two weeks
+  have accumulated. Its two activity contributors are left out and the remaining
+  weights renormalised.
+- **Activity** is not computed: its main contributors depend on a personal calorie
+  goal and multi-day training load that live in the Oura account, not on the ring.
+
+Details and the exact curves: [`docs/algorithms/estimated-scores.md`](../../docs/algorithms/estimated-scores.md).
 
 ## Status
 

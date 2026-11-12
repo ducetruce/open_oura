@@ -17,6 +17,7 @@ struct TodayView: View {
                                     .foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            scores(for: day)
                             metrics(for: day)
                             if !day.heartRate.isEmpty {
                                 Card(title: "Heart rate") {
@@ -50,6 +51,31 @@ struct TodayView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { DayToolbar(model: model) }
             .refreshable { await model.sync() }
+        }
+    }
+
+    private func scores(for day: DaySummary) -> some View {
+        let readiness = day.sleep?.readinessScore
+        return Card(title: "Scores") {
+            HStack(alignment: .top) {
+                ScoreRing(title: "Readiness", score: readiness, tint: .green)
+                ScoreRing(title: "Sleep", score: day.sleep?.sleepScore, tint: .indigo)
+            }
+            if let readiness {
+                ContributorList(score: readiness, tint: .green)
+                if readiness.provisional {
+                    Text("Readiness is provisional until about two weeks of nights have been synced: it compares each night with your own baseline.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Text("Readiness appears after a few nights have been synced: it compares each night with your own baseline.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            Text(scoreDisclaimer)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
     }
 

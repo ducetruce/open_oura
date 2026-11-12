@@ -10,6 +10,8 @@ struct TrendsView: View {
                 if let days = model.summary?.days, !days.isEmpty {
                     ScrollView {
                         VStack(spacing: 16) {
+                            trend("Readiness score", unit: "Score", tint: .green, days: days, value: \.readinessScoreValue)
+                            trend("Sleep score", unit: "Score", tint: .indigo, days: days, value: \.sleepScoreValue)
                             Card(title: "Sleep") {
                                 Chart {
                                     ForEach(sleepHours(days), id: \.0) { day, hours in
@@ -27,6 +29,11 @@ struct TrendsView: View {
                             trend("Skin temperature", unit: "°C", tint: .orange, days: days, value: \.skinTempC)
                             trend("Blood oxygen", unit: "%", tint: .cyan, days: days, value: \.avgSpo2Percent)
                             trend("Average activity", unit: "MET", tint: .green, days: days, value: \.avgMet)
+                            if days.contains(where: { $0.sleepScoreValue != nil }) {
+                                Text(scoreDisclaimer)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                         .padding()
                     }

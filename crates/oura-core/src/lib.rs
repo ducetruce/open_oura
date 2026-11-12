@@ -20,8 +20,10 @@ use oura_protocol::protocol::{self, feature, feature_mode};
 use oura_store::storage::Store;
 use tokio::sync::broadcast;
 
+pub mod scores;
 pub mod summary;
 
+pub use scores::{Contributor, Score};
 pub use summary::{DaySummary, Point, SleepNight, Summary};
 
 uniffi::setup_scaffolding!();

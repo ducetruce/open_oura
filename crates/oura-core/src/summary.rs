@@ -13,6 +13,7 @@
 //!   Oura's phone-side SleepNet model, so they will differ from the official app.
 //!   The epoch length of those events is not documented, so stage durations are the
 //!   stage *proportions* scaled to the time in bed.
+//! - **Scores** are estimates, not Oura's: see [`crate::scores`].
 //! - Multi-sample events (HRV: one sample per 5 min) are laid out ending at the
 //!   event's timestamp.
 
@@ -20,6 +21,7 @@ use oura_analysis::ported::{sleep, temperature};
 use oura_store::storage::Store;
 use serde_json::Value;
 
+use crate::scores::{self, ReadinessInputs, Score, SleepInputs};
 use crate::CoreError;
 
 const TAG_TIME_SYNC: u8 = 0x42;
@@ -73,6 +75,14 @@ pub struct SleepNight {
     pub avg_breath_rate: Option<f64>,
     pub avg_spo2_percent: Option<f64>,
     pub skin_temp_c: Option<f64>,
+    /// Time from getting into bed to first falling asleep (needs stages).
+    pub latency_s: u32,
+    /// Hours between the night's lowest heart rate and waking up.
+    pub recovery_index_h: Option<f64>,
+    /// Estimated sleep score (needs stages and at least 3 h in bed).
+    pub sleep_score: Option<Score>,
+    /// Estimated readiness score for the day this night ends on.
+    pub readiness_score: Option<Score>,
 }
 
 /// Everything the app shows for one local calendar day.
@@ -460,7 +470,7 @@ fn build_night(s: &Samples, start: i64, end: i64) -> SleepNight {
 
     let has_stages = !codes.is_empty();
     let (mut total, mut deep, mut light, mut rem, mut awake) = (0, 0, 0, 0, 0);
-    let (mut efficiency, mut wake_count) = (0.0, 0);
+    let (mut efficiency, mut wake_count, mut latency_s) = (0.0, 0, 0);
     if has_stages {
         let summary = sleep::summarize(&codes, None);
         let epochs_s = (codes.len() as u32 * sleep::EPOCH_SECONDS) as f64;
@@ -473,6 +483,7 @@ fn build_night(s: &Samples, start: i64, end: i64) -> SleepNight {
         total = deep + light + rem;
         efficiency = round2(summary.efficiency);
         wake_count = summary.wake_count;
+        latency_s = scale(summary.onset_latency_s);
     }
     let stages = if codes.len() > MAX_HYPNOGRAM_POINTS {
         let step = codes.len() as f64 / MAX_HYPNOGRAM_POINTS as f64;
@@ -515,6 +526,111 @@ fn build_night(s: &Samples, start: i64, end: i64) -> SleepNight {
         avg_breath_rate: mean(&in_window(&s.breath, start, end)).map(round1),
         avg_spo2_percent: mean(&in_window(&s.spo2, start, end)).map(round1),
         skin_temp_c,
+        latency_s,
+        recovery_index_h: recovery_index_h(s, start, end),
+        sleep_score: None,
+        readiness_score: None,
+    }
+}
+
+/// Hours between the night's lowest (smoothed) heart rate and waking up: the
+/// earlier the heart rate bottoms out, the more of the night was spent recovered.
+fn recovery_index_h(s: &Samples, start: i64, end: i64) -> Option<f64> {
+    let window = |series: &[Point]| -> Vec<Point> {
+        series
+            .iter()
+            .filter(|p| p.unix >= start && p.unix <= end)
+            .cloned()
+            .collect()
+    };
+    let mut points = window(&s.sleep_hr);
+    if points.len() < 12 {
+        points = window(&s.hrv_hr);
+    }
+    if points.len() < 12 {
+        return None;
+    }
+    // Rolling median of 5 so a single noisy sample can't be the minimum.
+    let lowest = points
+        .windows(5)
+        .map(|w| {
+            let values: Vec<f64> = w.iter().map(|p| p.value).collect();
+            (median(&values).unwrap_or(f64::MAX), w[2].unix)
+        })
+        .min_by(|a, b| a.0.total_cmp(&b.0))?;
+    Some(round2((end - lowest.1) as f64 / 3600.0))
+}
+
+/// Shortest stretch in bed that counts as a night for scoring and baselines, so
+/// naps neither get scores nor skew the baselines.
+const MIN_SCORED_NIGHT_S: u32 = 3 * 3600;
+/// Baselines only look at nights from the last three weeks.
+const BASELINE_MAX_AGE_S: i64 = 21 * 86_400;
+
+/// Fill in the estimated scores. `nights` must be in chronological order: each
+/// night is compared against baselines from the nights before it only.
+fn score_nights(nights: &mut [SleepNight], tz: i64) {
+    let midpoint_hour =
+        |n: &SleepNight| ((n.start_unix + n.end_unix) / 2 + tz).rem_euclid(86_400) as f64 / 3600.0;
+
+    for index in 0..nights.len() {
+        let (earlier, rest) = nights.split_at_mut(index);
+        let night = &mut rest[0];
+        if night.time_in_bed_s < MIN_SCORED_NIGHT_S {
+            continue;
+        }
+        let history: Vec<&SleepNight> = earlier
+            .iter()
+            .rev()
+            .filter(|n| {
+                n.time_in_bed_s >= MIN_SCORED_NIGHT_S
+                    && n.end_unix >= night.end_unix - BASELINE_MAX_AGE_S
+            })
+            .take(scores::MATURE_NIGHTS)
+            .collect();
+        let baseline = |value: fn(&SleepNight) -> Option<f64>| {
+            let values: Vec<f64> = history.iter().filter_map(|n| value(n)).collect();
+            (values.len() >= scores::MIN_BASELINE_NIGHTS)
+                .then(|| mean(&values))
+                .flatten()
+        };
+
+        if night.has_stages {
+            night.sleep_score = Some(scores::sleep_score(&SleepInputs {
+                total_sleep_s: night.total_sleep_s,
+                deep_s: night.deep_s,
+                rem_s: night.rem_s,
+                awake_s: night.awake_s,
+                time_in_bed_s: night.time_in_bed_s,
+                efficiency: night.efficiency,
+                latency_s: night.latency_s,
+                midpoint_hour: midpoint_hour(night),
+                prior_midpoint_hours: history.iter().take(7).map(|n| midpoint_hour(n)).collect(),
+            }));
+        }
+
+        let mut recent_sleep: Vec<f64> = history
+            .iter()
+            .filter(|n| n.has_stages)
+            .map(|n| n.total_sleep_s as f64)
+            .collect();
+        if night.has_stages {
+            recent_sleep.push(night.total_sleep_s as f64);
+        }
+        night.readiness_score = scores::readiness_score(&ReadinessInputs {
+            sleep_score: night.sleep_score.as_ref().map(|s| s.value),
+            lowest_hr_bpm: night.lowest_hr_bpm,
+            baseline_lowest_hr_bpm: baseline(|n| n.lowest_hr_bpm),
+            hrv_ms: night.avg_hrv_ms,
+            baseline_hrv_ms: baseline(|n| n.avg_hrv_ms),
+            skin_temp_c: night.skin_temp_c,
+            baseline_skin_temp_c: baseline(|n| n.skin_temp_c),
+            recent_sleep_s: (recent_sleep.len() > scores::MIN_BASELINE_NIGHTS)
+                .then(|| mean(&recent_sleep))
+                .flatten(),
+            recovery_index_h: night.recovery_index_h,
+            history_nights: history.len(),
+        });
     }
 }
 
@@ -529,10 +645,11 @@ pub fn build_summary(
     let tz = tz_offset_seconds as i64;
     let day_of = |unix: i64| (unix + tz).div_euclid(86_400);
 
-    let nights: Vec<SleepNight> = night_windows(&samples)
+    let mut nights: Vec<SleepNight> = night_windows(&samples)
         .into_iter()
         .map(|(a, b)| build_night(&samples, a, b))
         .collect();
+    score_nights(&mut nights, tz);
 
     let mut day_ids: Vec<i64> = samples
         .hrv_hr
@@ -712,6 +829,17 @@ mod tests {
         assert_eq!(night.lowest_hr_bpm, Some(45.0));
         assert_eq!(night.avg_hrv_ms, Some(60.0));
         assert_eq!(night.avg_breath_rate, Some(14.0));
+        // Asleep from the first epoch.
+        assert_eq!(night.latency_s, 0);
+        let sleep_score = night.sleep_score.as_ref().unwrap();
+        assert_eq!(sleep_score.contributors.len(), 7);
+        assert!(
+            (60..=95).contains(&sleep_score.value),
+            "{}",
+            sleep_score.value
+        );
+        // One night is not enough history for a readiness score.
+        assert!(night.readiness_score.is_none());
 
         assert_eq!(day.resting_hr_bpm, Some(45.0));
         assert_eq!(day.hrv.len(), 3);
@@ -740,5 +868,61 @@ mod tests {
         let summary = build_summary(&Store::open_in_memory().unwrap(), 0, 7).unwrap();
         assert!(summary.days.is_empty());
         assert_eq!(summary.battery_percent, None);
+    }
+
+    fn night(end_unix: i64, hr: f64, hrv: f64) -> SleepNight {
+        SleepNight {
+            start_unix: end_unix - 8 * 3600,
+            end_unix,
+            time_in_bed_s: 8 * 3600,
+            has_stages: true,
+            total_sleep_s: 7 * 3600,
+            deep_s: 80 * 60,
+            light_s: 250 * 60,
+            rem_s: 90 * 60,
+            awake_s: 60 * 60,
+            efficiency: 0.88,
+            wake_count: 3,
+            stages: Vec::new(),
+            lowest_hr_bpm: Some(hr),
+            avg_hr_bpm: Some(hr + 6.0),
+            avg_hrv_ms: Some(hrv),
+            avg_breath_rate: None,
+            avg_spo2_percent: None,
+            skin_temp_c: Some(34.8),
+            latency_s: 15 * 60,
+            recovery_index_h: Some(4.0),
+            sleep_score: None,
+            readiness_score: None,
+        }
+    }
+
+    #[test]
+    fn readiness_appears_once_baselines_exist_and_reacts_to_a_bad_night() {
+        let wake = |day: i64| MIDNIGHT as i64 + day * 86_400 + 7 * 3600;
+        let mut nights: Vec<SleepNight> = (0..5).map(|d| night(wake(d), 50.0, 60.0)).collect();
+        // Sixth night: resting HR up 8 bpm, HRV down a third.
+        nights.push(night(wake(5), 58.0, 40.0));
+        // A nap neither gets scored nor enters the baselines.
+        let mut nap = night(wake(5) + 8 * 3600, 70.0, 20.0);
+        nap.time_in_bed_s = 3600;
+        nights.push(nap);
+        score_nights(&mut nights, 0);
+
+        assert!(nights
+            .iter()
+            .all(|n| n.sleep_score.is_some() || n.time_in_bed_s == 3600));
+        // The first three nights have no baseline to compare against yet.
+        assert!(nights[..3].iter().all(|n| n.readiness_score.is_none()));
+        let steady = nights[4].readiness_score.as_ref().unwrap();
+        let strained = nights[5].readiness_score.as_ref().unwrap();
+        assert!(steady.provisional && strained.provisional);
+        assert!(
+            strained.value + 15 <= steady.value,
+            "steady {} vs strained {}",
+            steady.value,
+            strained.value
+        );
+        assert!(nights[6].sleep_score.is_none() && nights[6].readiness_score.is_none());
     }
 }
