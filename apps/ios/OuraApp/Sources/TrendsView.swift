@@ -12,6 +12,7 @@ struct TrendsView: View {
                         VStack(spacing: 16) {
                             trend("Readiness score", unit: "Score", tint: .green, days: days, value: \.readinessScoreValue)
                             trend("Sleep score", unit: "Score", tint: .indigo, days: days, value: \.sleepScoreValue)
+                            trend("Oura-style sleep score", unit: "Score", tint: .teal, days: days, value: \.ouraSleepScoreValue)
                             Card(title: "Sleep") {
                                 Chart {
                                     ForEach(sleepHours(days), id: \.0) { day, hours in
@@ -29,11 +30,6 @@ struct TrendsView: View {
                             trend("Skin temperature", unit: "°C", tint: .orange, days: days, value: \.skinTempC)
                             trend("Blood oxygen", unit: "%", tint: .cyan, days: days, value: \.avgSpo2Percent)
                             trend("Average activity", unit: "MET", tint: .green, days: days, value: \.avgMet)
-                            if days.contains(where: { $0.sleepScoreValue != nil }) {
-                                Text(scoreDisclaimer)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
                         }
                         .padding()
                     }
@@ -49,7 +45,7 @@ struct TrendsView: View {
     private func sleepHours(_ days: [DaySummary]) -> [(Date, Double)] {
         days.compactMap { day in
             guard let night = day.sleep else { return nil }
-            let seconds = night.hasStages ? night.totalSleepS : night.timeInBedS
+            let seconds = night.stagesComplete ? night.totalSleepS : night.timeInBedS
             return (day.midday, Double(seconds) / 3600)
         }
     }

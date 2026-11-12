@@ -26,11 +26,31 @@ extension DaySummary {
     }
 
     var sleepScoreValue: Double? { sleep?.sleepScore.map { Double($0.value) } }
+    var ouraSleepScoreValue: Double? { sleep?.ouraSleepScore.map { Double($0.value) } }
     var readinessScoreValue: Double? { sleep?.readinessScore.map { Double($0.value) } }
 }
 
-/// Shown wherever a score appears: these are not Oura's numbers.
-let scoreDisclaimer = "Estimates. They combine Oura’s contributor weights with this app’s own curves, so they will not match the official app."
+extension ScoreBasis {
+    /// One line saying what a score is, shown wherever it appears.
+    var explanation: String {
+        switch self {
+        case .publishedNorms:
+            "Scored against published sleep-science recommendations for your age. This is not Oura’s score."
+        case .ouraCalibrated:
+            "Oura’s weights with curves fitted to your own Oura history. Close to the official app, not identical: sleep stages here come from the ring’s firmware."
+        case .estimate:
+            "An estimate: Oura’s weights with this app’s own curves. Import a calibration in the Ring tab to fit it to your Oura history."
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .publishedNorms: "Sleep norms"
+        case .ouraCalibrated: "Oura-calibrated"
+        case .estimate: "Estimate"
+        }
+    }
+}
 
 // MARK: Sleep stages
 
@@ -129,9 +149,10 @@ struct ScoreRing: View {
             }
             .frame(width: 96, height: 96)
             Text(title).font(.subheadline)
-            Text(score?.provisional == true ? "Provisional" : " ")
+            Text(caption)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
@@ -139,9 +160,14 @@ struct ScoreRing: View {
         .accessibilityValue(spokenValue)
     }
 
+    private var caption: String {
+        guard let score else { return " " }
+        return score.provisional ? "\(score.basis.label), provisional" : score.basis.label
+    }
+
     private var spokenValue: String {
         guard let score else { return "Not available" }
-        return score.provisional ? "\(score.value), provisional" : String(score.value)
+        return "\(score.value), \(caption)"
     }
 }
 

@@ -24,8 +24,14 @@ final class RingConnection: NSObject, ObservableObject {
     @Published private(set) var state: LinkState = .idle
     @Published private(set) var discovered: [DiscoveredRing] = []
     @Published private(set) var rememberedRing: UUID?
+    /// Why the last connection attempt failed, if it did.
+    @Published private(set) var lastProblem: String?
 
     private static let rememberedKey = "ringIdentifier"
+    /// Ring 5's charging case advertises an Oura-looking name and its own service.
+    /// It must never be connected to in place of the ring.
+    private static let chargingCaseService = CBUUID(string: "8BC5888F-C577-4F5D-857F-377354093F13")
+    private static let writeTimeout: DispatchTimeInterval = .seconds(10)
 
     private let core: OuraCore
     private let queue = DispatchQueue(label: "dev.openoura.ble")
@@ -40,6 +46,8 @@ final class RingConnection: NSObject, ObservableObject {
     private var pendingSubscriptions = 0
     private var attached = false
     private var wanted: UUID?
+    /// Signalled with the outcome of the write-with-response in flight.
+    private var pendingWrite: (DispatchSemaphore, (Bool) -> Void)?
 
     init(core: OuraCore) {
         self.core = core
@@ -58,7 +66,14 @@ final class RingConnection: NSObject, ObservableObject {
         queue.async {
             guard self.central.state == .poweredOn else { return }
             self.seen.removeAll()
-            self.central.scanForPeripherals(withServices: [self.serviceUUID])
+            // Unfiltered, with duplicates: the ring's name only arrives in its scan
+            // response, which a worn ring answers lazily, and a service-filtered
+            // scan can coalesce it into one early name-less report. Rings are
+            // matched in `didDiscover` instead.
+            self.central.scanForPeripherals(
+                withServices: nil,
+                options: [CBCentralManagerScanOptionAllowDuplicatesKey: true]
+            )
             self.publish(.scanning)
         }
     }
@@ -74,6 +89,7 @@ final class RingConnection: NSObject, ObservableObject {
     func connect(to id: UUID) {
         UserDefaults.standard.set(id.uuidString, forKey: Self.rememberedKey)
         rememberedRing = id
+        lastProblem = nil
         queue.async {
             self.wanted = id
             self.connectWanted()
@@ -84,6 +100,7 @@ final class RingConnection: NSObject, ObservableObject {
     func forget() {
         UserDefaults.standard.removeObject(forKey: Self.rememberedKey)
         rememberedRing = nil
+        lastProblem = nil
         queue.async {
             self.wanted = nil
             if let peripheral = self.peripheral {
@@ -98,6 +115,10 @@ final class RingConnection: NSObject, ObservableObject {
 
     private func publish(_ state: LinkState) {
         DispatchQueue.main.async { self.state = state }
+    }
+
+    private func report(_ problem: String?) {
+        DispatchQueue.main.async { self.lastProblem = problem }
     }
 
     /// Start (or restart) a connection to the wanted ring. A CoreBluetooth connect
@@ -121,13 +142,15 @@ final class RingConnection: NSObject, ObservableObject {
             core.detach()
             attached = false
         }
+        finishWrite(false)
         writeCharacteristic = nil
         pendingSubscriptions = 0
         peripheral?.delegate = nil
         peripheral = nil
     }
 
-    private func fail(_ peripheral: CBPeripheral) {
+    private func fail(_ peripheral: CBPeripheral, _ problem: String) {
+        report(problem)
         central.cancelPeripheralConnection(peripheral)
     }
 
@@ -139,19 +162,37 @@ final class RingConnection: NSObject, ObservableObject {
             self.connectWanted()
         }
     }
+
+    private func finishWrite(_ succeeded: Bool) {
+        guard let (semaphore, record) = pendingWrite else { return }
+        pendingWrite = nil
+        record(succeeded)
+        semaphore.signal()
+    }
 }
 
 extension RingConnection: RingLink {
     /// Called by the Rust core from a background thread (never from `queue`).
+    /// Waits for the ring to acknowledge the write, so a failed write surfaces as
+    /// an error instead of a request that silently never got an answer.
     func write(data: Data) -> Bool {
-        queue.sync { () -> Bool in
+        let done = DispatchSemaphore(value: 0)
+        var succeeded = false
+        let started: Bool = queue.sync {
             guard self.attached, let peripheral = self.peripheral,
                   let characteristic = self.writeCharacteristic,
-                  peripheral.state == .connected
+                  peripheral.state == .connected, self.pendingWrite == nil
             else { return false }
+            self.pendingWrite = (done, { succeeded = $0 })
             peripheral.writeValue(data, for: characteristic, type: .withResponse)
             return true
         }
+        guard started else { return false }
+        if done.wait(timeout: .now() + Self.writeTimeout) == .timedOut {
+            queue.sync { self.pendingWrite = nil }
+            return false
+        }
+        return succeeded
     }
 }
 
@@ -184,23 +225,40 @@ extension RingConnection: CBCentralManagerDelegate {
         advertisementData: [String: Any],
         rssi RSSI: NSNumber
     ) {
+        let advertisedName = advertisementData[CBAdvertisementDataLocalNameKey] as? String
+        let name = advertisedName ?? peripheral.name ?? ""
+        let services = advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] ?? []
+        let lowerName = name.lowercased()
+        if lowerName.contains("charging case") || services.contains(Self.chargingCaseService) {
+            return
+        }
+        // A ring advertises the Oura service; a bonded ring often has no name.
+        guard services.contains(serviceUUID) || lowerName.contains("oura") else { return }
+
         seen[peripheral.identifier] = peripheral
-        // A bonded ring often stops advertising its name.
-        let name = peripheral.name
-            ?? advertisementData[CBAdvertisementDataLocalNameKey] as? String
-            ?? "Oura Ring"
-        let ring = DiscoveredRing(id: peripheral.identifier, name: name, rssi: RSSI.intValue)
+        let ring = DiscoveredRing(
+            id: peripheral.identifier,
+            name: name.isEmpty ? "Oura Ring" : name,
+            rssi: RSSI.intValue
+        )
         DispatchQueue.main.async {
             if let index = self.discovered.firstIndex(where: { $0.id == ring.id }) {
-                self.discovered[index] = ring
+                // Keep a real name once seen: later duplicates may lack it.
+                var updated = ring
+                if name.isEmpty { updated.name = self.discovered[index].name }
+                // Duplicate reports arrive constantly; only redraw on a real change.
+                let current = self.discovered[index]
+                guard current.name != updated.name || abs(current.rssi - updated.rssi) >= 5
+                else { return }
+                self.discovered[index] = updated
             } else {
                 self.discovered.append(ring)
             }
-            self.discovered.sort { $0.rssi > $1.rssi }
         }
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        guard peripheral === self.peripheral else { return }
         peripheral.discoverServices([serviceUUID])
     }
 
@@ -209,6 +267,8 @@ extension RingConnection: CBCentralManagerDelegate {
         didFailToConnect peripheral: CBPeripheral,
         error: Error?
     ) {
+        guard peripheral === self.peripheral else { return }
+        report(error?.localizedDescription ?? "Could not connect to the ring.")
         tearDown()
         reconnectSoon()
     }
@@ -218,7 +278,7 @@ extension RingConnection: CBCentralManagerDelegate {
         didDisconnectPeripheral peripheral: CBPeripheral,
         error: Error?
     ) {
-        guard peripheral.identifier == self.peripheral?.identifier else { return }
+        guard peripheral === self.peripheral else { return }
         tearDown()
         publish(.idle)
         reconnectSoon()
@@ -227,8 +287,9 @@ extension RingConnection: CBCentralManagerDelegate {
 
 extension RingConnection: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        guard peripheral === self.peripheral else { return }
         guard let service = peripheral.services?.first(where: { $0.uuid == serviceUUID }) else {
-            fail(peripheral)
+            fail(peripheral, "This device does not expose the Oura service.")
             return
         }
         peripheral.discoverCharacteristics(nil, for: service)
@@ -239,9 +300,10 @@ extension RingConnection: CBPeripheralDelegate {
         didDiscoverCharacteristicsFor service: CBService,
         error: Error?
     ) {
+        guard peripheral === self.peripheral else { return }
         let characteristics = service.characteristics ?? []
         guard let write = characteristics.first(where: { $0.uuid == writeUUID }) else {
-            fail(peripheral)
+            fail(peripheral, "The ring's write characteristic is missing.")
             return
         }
         writeCharacteristic = write
@@ -251,7 +313,7 @@ extension RingConnection: CBPeripheralDelegate {
             $0.properties.contains(.notify) || $0.properties.contains(.indicate)
         }
         guard !notifying.isEmpty else {
-            fail(peripheral)
+            fail(peripheral, "The ring exposes no notification characteristics.")
             return
         }
         pendingSubscriptions = notifying.count
@@ -265,11 +327,20 @@ extension RingConnection: CBPeripheralDelegate {
         didUpdateNotificationStateFor characteristic: CBCharacteristic,
         error: Error?
     ) {
-        guard !attached, pendingSubscriptions > 0 else { return }
+        guard peripheral === self.peripheral, !attached, pendingSubscriptions > 0 else { return }
+        if let error {
+            // A pairing/encryption demand surfaces here ("Authentication is
+            // insufficient"): the ring is bonded to another phone.
+            fail(peripheral, "The ring refused the connection: \(error.localizedDescription)")
+            return
+        }
         pendingSubscriptions -= 1
+        // Not ready until every subscription is confirmed, or the core could send
+        // a request before its answer can be received.
         if pendingSubscriptions == 0 {
             attached = true
             core.attach(link: self)
+            report(nil)
             publish(.ready)
         }
     }
@@ -281,5 +352,13 @@ extension RingConnection: CBPeripheralDelegate {
     ) {
         guard let value = characteristic.value, !value.isEmpty else { return }
         core.onNotification(data: value)
+    }
+
+    func peripheral(
+        _ peripheral: CBPeripheral,
+        didWriteValueFor characteristic: CBCharacteristic,
+        error: Error?
+    ) {
+        finishWrite(error == nil)
     }
 }

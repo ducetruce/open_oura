@@ -42,10 +42,10 @@ private struct NightDetail: View {
             Card(title: "Night") {
                 HStack {
                     VStack(alignment: .leading) {
-                        Text(night.hasStages ? "Asleep" : "In bed")
+                        Text(night.stagesComplete ? "Asleep" : "In bed")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        Text(formatDuration(seconds: night.hasStages ? night.totalSleepS : night.timeInBedS))
+                        Text(formatDuration(seconds: night.stagesComplete ? night.totalSleepS : night.timeInBedS))
                             .font(.largeTitle.weight(.semibold))
                             .monospacedDigit()
                     }
@@ -61,29 +61,26 @@ private struct NightDetail: View {
             }
 
             if let score = night.sleepScore {
-                Card(title: "Sleep score") {
-                    HStack {
-                        ScoreRing(title: "Sleep", score: score, tint: .indigo)
-                    }
-                    ContributorList(score: score, tint: .indigo)
-                    Text(scoreDisclaimer)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+                ScoreCard(title: "Sleep score", score: score, tint: .indigo)
+            }
+            if let score = night.ouraSleepScore {
+                ScoreCard(title: "Oura-style sleep score", score: score, tint: .teal)
             }
 
             if night.hasStages {
                 Card(title: "Stages") {
                     Hypnogram(night: night)
                     StageBreakdown(night: night)
-                    Text("Stages come from the ring’s own firmware, not Oura’s phone-side model, so they will differ from the official app. Durations are estimated from each stage’s share of the night.")
+                    Text(night.stagesComplete
+                        ? "Stages are the ring’s own analysis, not Oura’s phone-side model, so they can differ from the official app."
+                        : "The ring analysed only part of this night. The grey gaps are not awake time, and efficiency and scores are left out.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
 
             LazyVGrid(columns: columns, spacing: 12) {
-                if night.hasStages {
+                if night.stagesComplete {
                     MetricCard(
                         title: "Efficiency",
                         value: formatValue(night.efficiency * 100),
@@ -92,12 +89,30 @@ private struct NightDetail: View {
                         tint: .indigo
                     )
                     MetricCard(
-                        title: "Time in bed",
-                        value: formatDuration(seconds: night.timeInBedS),
-                        systemImage: "bed.double.fill",
+                        title: "Time to fall asleep",
+                        value: formatDuration(seconds: night.latencyS),
+                        systemImage: "hourglass",
                         tint: .indigo
                     )
+                    MetricCard(
+                        title: "Awake during the night",
+                        value: formatDuration(seconds: night.wasoS),
+                        systemImage: "eye",
+                        tint: .orange
+                    )
+                    MetricCard(
+                        title: "Awakenings",
+                        value: String(night.wakeCount),
+                        systemImage: "bell",
+                        tint: .orange
+                    )
                 }
+                MetricCard(
+                    title: "Time in bed",
+                    value: formatDuration(seconds: night.timeInBedS),
+                    systemImage: "bed.double.fill",
+                    tint: .indigo
+                )
                 MetricCard(
                     title: "Lowest heart rate",
                     value: formatValue(night.lowestHrBpm),
@@ -145,7 +160,26 @@ private struct NightDetail: View {
     }
 }
 
-/// The night's stages as coloured blocks on a time axis.
+private struct ScoreCard: View {
+    let title: String
+    let score: Score
+    let tint: Color
+
+    var body: some View {
+        Card(title: title) {
+            HStack {
+                ScoreRing(title: "Sleep", score: score, tint: tint)
+            }
+            ContributorList(score: score, tint: tint)
+            Text(score.basis.explanation)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// The night's stages as coloured blocks on a time axis. Epochs the ring did not
+/// analyse are left blank.
 private struct Hypnogram: View {
     let night: SleepNight
 

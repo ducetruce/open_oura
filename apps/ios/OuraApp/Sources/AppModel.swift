@@ -1,12 +1,13 @@
 import Combine
 import Foundation
+import UIKit
 
 /// Plain message for an error, unwrapping the Rust core's error enum.
 func describe(_ error: Error) -> String {
     if let error = error as? CoreError {
         switch error {
         case .NotConnected(let message), .Busy(let message), .InvalidKey(let message),
-             .Ring(let message), .Storage(let message):
+             .Ring(let message), .Storage(let message), .InvalidCalibration(let message):
             return message
         }
     }
@@ -60,9 +61,17 @@ final class AppModel: ObservableObject {
     @Published private(set) var lastSyncResult: String?
     @Published var errorMessage: String?
     @Published var selectedDate: String?
-    @Published var setRingClock: Bool {
-        didSet { UserDefaults.standard.set(setRingClock, forKey: "setRingClock") }
+    /// The imported Oura score calibration, if any.
+    @Published private(set) var calibration: CalibrationInfo?
+    /// Age in years for the age-specific sleep recommendations; 0 means not set.
+    @Published var age: Int {
+        didSet {
+            UserDefaults.standard.set(age, forKey: "age")
+            Task { await reloadStoredData() }
+        }
     }
+
+    private let calibrationFile: URL
 
     init() {
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -76,7 +85,12 @@ final class AppModel: ObservableObject {
         self.core = core
         ring = RingConnection(core: core)
         hasKey = KeyStore.load() != nil
-        setRingClock = UserDefaults.standard.bool(forKey: "setRingClock")
+        age = UserDefaults.standard.integer(forKey: "age")
+        calibrationFile = directory.appendingPathComponent("score_params.json")
+        // A calibration imported earlier is kept next to the database.
+        if let saved = try? String(contentsOf: calibrationFile, encoding: .utf8) {
+            calibration = try? core.setScoreCalibration(json: saved)
+        }
 
         ring.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
@@ -126,10 +140,11 @@ final class AppModel: ObservableObject {
         let core = core
         let offset = Int32(TimeZone.current.secondsFromGMT())
         let days = Self.historyDays
+        let ageBand: UInt8? = (1...120).contains(age) ? UInt8(age) : nil
         do {
             let loaded = try await offMain {
                 try (
-                    core.summary(tzOffsetSeconds: offset, days: days),
+                    core.summary(tzOffsetSeconds: offset, days: days, age: ageBand),
                     core.storedDevice(),
                     core.eventCounts()
                 )
@@ -148,7 +163,13 @@ final class AppModel: ObservableObject {
     private func perform<T>(_ label: String, _ work: @escaping () throws -> T) async -> T? {
         guard activity == nil else { return nil }
         activity = label
-        defer { activity = nil }
+        // iOS suspends a locked phone's foreground app mid-transfer; keep the screen
+        // on for the duration of a ring operation.
+        UIApplication.shared.isIdleTimerDisabled = true
+        defer {
+            activity = nil
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
         do {
             return try await offMain(work)
         } catch {
@@ -171,14 +192,13 @@ final class AppModel: ObservableObject {
             return
         }
         let core = core
-        let setClock = setRingClock
         syncProgress = "Starting…"
         let listener = SyncProgressRelay { [weak self] events, bytesLeft in
             let remaining = ByteCountFormatter.string(fromByteCount: Int64(bytesLeft), countStyle: .memory)
             self?.syncProgress = "\(events) events, \(remaining) left on ring"
         }
         let report = await perform("Syncing") {
-            try core.sync(keyHex: key, setRingClock: setClock, listener: listener)
+            try core.sync(keyHex: key, listener: listener)
         }
         syncProgress = nil
         if let report {
@@ -205,6 +225,30 @@ final class AppModel: ObservableObject {
         _ = await perform("Measuring heart rate") {
             try core.liveHeartRate(keyHex: key, seconds: seconds, listener: listener)
         }
+    }
+
+    // MARK: Score calibration
+
+    /// Import a `score_params.json` made by `tools/calibrate_scores.py` from an
+    /// Oura trends export. Scores are then calibrated to that history.
+    func importCalibration(from url: URL) async {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        do {
+            let json = try String(contentsOf: url, encoding: .utf8)
+            calibration = try core.setScoreCalibration(json: json)
+            try json.write(to: calibrationFile, atomically: true, encoding: .utf8)
+        } catch {
+            errorMessage = describe(error)
+            return
+        }
+        await reloadStoredData()
+    }
+
+    func removeCalibration() async {
+        try? FileManager.default.removeItem(at: calibrationFile)
+        calibration = try? core.setScoreCalibration(json: nil)
+        await reloadStoredData()
     }
 
     // MARK: Key management

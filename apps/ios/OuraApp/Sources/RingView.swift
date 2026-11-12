@@ -1,10 +1,12 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct RingView: View {
     @EnvironmentObject private var model: AppModel
     @State private var keyText = ""
     @State private var confirmPair = false
     @State private var confirmRemoveKey = false
+    @State private var importingCalibration = false
 
     var body: some View {
         NavigationStack {
@@ -18,6 +20,7 @@ struct RingView: View {
                     syncSection
                     liveSection
                 }
+                scoresSection
                 deviceSection
                 storageSection
             }
@@ -50,7 +53,9 @@ struct RingView: View {
         } header: {
             Text("Connection")
         } footer: {
-            if model.ring.state == .connecting {
+            if let problem = model.ring.lastProblem, model.ring.state != .ready {
+                Text(problem)
+            } else if model.ring.state == .connecting {
                 Text("Waiting for the ring. It can only talk to one phone at a time: close the official Oura app, or put the ring on its charger for a moment.")
             }
         }
@@ -162,11 +167,40 @@ struct RingView: View {
             if let result = model.lastSyncResult {
                 Text(result).foregroundStyle(.secondary)
             }
-            Toggle("Set ring clock when syncing", isOn: $model.setRingClock)
         } header: {
             Text("Sync")
         } footer: {
-            Text("The official app sets the ring’s clock on every sync. Turn this on if this app is the only one syncing the ring, so readings get exact times.")
+            Text("Keep the app open while syncing. Each sync also sets the ring’s clock, as the official app does, so readings get exact times.")
+        }
+    }
+
+    // MARK: Scores
+
+    private var scoresSection: some View {
+        Section {
+            Stepper(value: $model.age, in: 0...120) {
+                LabeledContent("Age", value: model.age == 0 ? "Not set" : "\(model.age)")
+            }
+            if let calibration = model.calibration {
+                LabeledContent("Oura calibration", value: "\(calibration.days) days")
+                Button("Remove calibration", role: .destructive) {
+                    Task { await model.removeCalibration() }
+                }
+            } else {
+                Button("Import Oura calibration…") { importingCalibration = true }
+            }
+        } header: {
+            Text("Scores")
+        } footer: {
+            Text("Age picks the recommended sleep range (40 is assumed when not set). To fit scores to your Oura history, export your trends from your Oura account, run tools/calibrate_scores.py on a computer and import the score_params.json it writes.")
+        }
+        .fileImporter(isPresented: $importingCalibration, allowedContentTypes: [.json]) { result in
+            switch result {
+            case .success(let url):
+                Task { await model.importCalibration(from: url) }
+            case .failure(let error):
+                model.errorMessage = describe(error)
+            }
         }
     }
 

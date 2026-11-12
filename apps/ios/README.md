@@ -3,8 +3,8 @@
 A native iPhone app that reads an Oura ring directly over Bluetooth: no Oura
 account, no cloud, no ML models. Everything stays in a SQLite database on the phone.
 
-- **Scores** - estimated Readiness and Sleep scores with their contributors (see
-  "Scores" below: these are not Oura's numbers).
+- **Scores** - a Sleep score from published sleep norms, a Readiness score, and
+  optionally Oura-calibrated versions of both (see "Scores" below).
 - **Today** - sleep, resting heart rate, HRV, blood oxygen, skin temperature and
   activity for a day, with heart-rate / HRV / activity charts.
 - **Sleep** - the night's window, stage hypnogram and breakdown, lowest and average
@@ -60,55 +60,55 @@ the ring) if the app stays on "Connecting…".
 ## What the numbers are
 
 All metrics are computed in `crates/oura-core/src/summary.rs` from the ring's own
-history events:
+history events, following the rules upstream `open_health` validated on real rings:
 
 | Shown | Source |
 | --- | --- |
 | Night window | `bedtime_period` (0x76), else runs of `sleep_period_information_2` (0x6a) |
-| Sleep stages | the ring's **firmware** hypnogram (0x4b/0x4e/0x5a) |
-| Heart rate, HRV | `hrv_event` (0x5d, 5-minute averages), 0x6a during sleep |
-| Breathing rate | 0x6a |
-| Blood oxygen | `spo2_event` (0x6f) |
-| Skin temperature | temperature events (0x46/0x69/0x75) through the ported nightly-temperature algorithm |
+| Sleep stages, latency, awakenings | the ring's own hypnogram, `sleep_phase_data` (0x5a): 30 s epochs written when the ring finishes analysing a sleep |
+| Heart rate, HRV | `hrv_event` (0x5d, 5-minute averages) |
+| Breathing rate | 0x6a windows the ring scored as asleep |
+| Blood oxygen | `spo2_event` (0x6f), or the R ratio of `spo2_r_pi_event` (0x8b) through the ported SpO2 curve |
+| Skin temperature | `sleep_temp_event` (0x75) through the ported nightly-temperature algorithm |
 | Activity | `activity_information` (0x50) MET levels |
 
 Limits worth knowing:
 
-- **Scores are estimates, and there is no Activity score.** See below.
-- **Sleep stages differ from the official app**, which uses its SleepNet model
-  rather than the firmware hypnogram. The epoch length of the firmware events is
-  not documented, so stage durations are each stage's share of the night scaled to
-  the time in bed.
-- **Times depend on the ring's clock anchors** (`time_sync` / `rtc_beacon`). Data
-  with no anchor is timed from the moment it was synced and flagged in the app;
-  *Set ring clock when syncing* writes an anchor on each sync.
+- **Sleep stages are the ring's firmware analysis**, not the staging model the
+  official app runs on the phone, so they can differ from the official app. A night
+  the ring only partly analysed shows its stages with gaps and gets no efficiency,
+  latency or sleep score.
+- **Times depend on clock anchors.** Every sync sets the ring's clock and stores a
+  phone-clock anchor, so data synced by this app is timed exactly. Older data with
+  no anchor is timed from the moment it was synced and flagged in the app.
 - Syncing happens while the app is open; there is no background sync.
 
 ## Scores
 
-The app shows a **Sleep** and a **Readiness** score, each 0-100 with its
-contributors. They are estimates and will not match the official app:
+Details: [`docs/algorithms/estimated-scores.md`](../../docs/algorithms/estimated-scores.md).
 
-- Oura's *weights* for combining contributors are known (recovered by regression in
-  [`docs/algorithms/score-weights.md`](../../docs/algorithms/score-weights.md)) and
-  are used as-is.
-- Oura's *curves* for turning a raw metric into each 0-100 contributor are not
-  recoverable from this repository, so `crates/oura-core/src/scores.rs` uses its own,
-  set to general sleep-health guidance. On top of that, the sleep stages feeding
-  them are the firmware's, not SleepNet's.
-- **Sleep** needs a night of at least 3 hours with stages.
-- **Readiness** compares a night with your own trailing 14-night baseline, so it
-  appears after about four synced nights and is marked provisional until two weeks
-  have accumulated. Its two activity contributors are left out and the remaining
-  weights renormalised.
-- **Activity** is not computed: its main contributors depend on a personal calorie
-  goal and multi-day training load that live in the Oura account, not on the ring.
+- **Sleep score** (always): scored against published sleep-science recommendations
+  for your age (set it in Ring → Scores). Ported from `open_health`. It is
+  deliberately not Oura's score.
+- **Readiness** (always, from about the fourth night): an estimate using Oura's
+  weights and this app's own curves, comparing each night with your baseline.
+- **Oura-calibrated Sleep and Readiness** (optional): export your trends from your
+  Oura account, run `tools/calibrate_scores.py --csv trends.csv` on a computer and
+  import the resulting `score_params.json` in Ring → Scores. The app then also shows
+  an Oura-style sleep score and switches Readiness to the calibrated curves.
+- **No Activity score**, and no exact Oura scores: see the document above for why.
 
-Details and the exact curves: [`docs/algorithms/estimated-scores.md`](../../docs/algorithms/estimated-scores.md).
+## Compared with open_health
+
+Upstream's [`open_health`](https://github.com/Th0rgal/open_health) app is far more
+complete. This app shares its sync behaviour, clock anchoring, signal sources and
+sleep score, and does not have its models, reports or exports. The full list is in
+[`docs/clients-web-and-ios.md`](../../docs/clients-web-and-ios.md).
 
 ## Status
 
 The Rust core is covered by tests (`cargo test -p oura-core`), including the auth
-handshake through the foreign link and the summary on synthetic events. The Swift
+handshake through the foreign link, the summary on synthetic events, the scores and
+the calibration evaluator. The Swift
 app was written without access to Xcode or a ring, so it has **not been compiled or
 run on a device yet**: expect to fix small compile errors on the first build.

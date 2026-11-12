@@ -1,85 +1,86 @@
-# Estimated Sleep and Readiness scores (`oura-core::scores`)
+# Scores in the iOS app (`oura-core`)
 
-The iOS app shows a Sleep and a Readiness score. **They are estimates, not a port
-of Oura's scores**, and this file records exactly which parts are Oura's and which
-are ours.
+The app shows up to three kinds of score. None is a port of Oura's scoring: its
+constant tables do not read back from the binary (see [`README.md`](README.md)).
+Each `Score` carries a `basis` saying which kind it is.
 
-- **Impl:** `crates/oura-core/src/scores.rs`, wired per night in
-  `summary.rs::score_nights`.
-- **Status:** approximate by design. Not validated against Oura's numbers: no
-  paired ring data + official scores were available when this was written.
-
-## What is Oura's
-
-The combiner, `round(Σ wᵢ·contributorᵢ / Σ wᵢ)`, and the weights, as recovered in
-[`score-weights.md`](score-weights.md):
-
-| Sleep | weight | Readiness | weight |
+| Basis | Score | Source of the thresholds | Code |
 | --- | --- | --- | --- |
-| Total sleep | 35 | Resting heart rate | 17 |
-| Restfulness | 15 | Previous night | 15 |
-| Efficiency | 10 | HRV balance | 15 |
-| REM sleep | 10 | Body temperature | 13 |
-| Deep sleep | 10 | Sleep balance | 12 |
-| Latency | 10 | Recovery index | 10 |
-| Timing | 10 | *Previous day activity* | *10, not computed* |
-| | | *Activity balance* | *7, not computed* |
+| `PublishedNorms` | Sleep | published sleep-science recommendations | `scores.rs::norms_sleep_score` |
+| `OuraCalibrated` | Sleep, Readiness | Oura's weights + curves fitted to the user's own Oura trends export | `calibration.rs` |
+| `Estimate` | Readiness | Oura's weights + this project's hand-set curves | `scores.rs::readiness_score` |
 
-Readiness is combined over the contributors that are present, with their weights
-renormalised (so the six computed ones carry 82 points of weight between them).
+There is no Activity score: its main contributors depend on a personal calorie
+goal and multi-day training load held by the Oura account, not on the ring.
 
-## What is ours
+All sleep scores need a **completely staged** night. Stages are the ring's own
+`sleep_phase_data` hypnogram (firmware staging), not Oura's phone-side staging
+model, which is the main remaining difference from the official app's inputs.
 
-Every contributor curve. ecore's tables do not read back from the binary, and the
-repository's Python scorers (`tools/calibrate_scores.py`) re-fit them per user from
-a personal Oura trends export into `local/score_params.json`, which the app does
-not have. The curves below are piecewise-linear, hand-set to general sleep-health
-guidance, clamped at both ends.
+## Published-norms sleep score
 
-### Sleep
+Ported from upstream `open_health` (`crates/oura-summary/src/sleep_score.rs`, MIT,
+© Thomas Marchand), which describes it as "a sleep score you can argue with": every
+threshold traces to a paper rather than to a fit against Oura's number. Each
+component is a piecewise-linear curve pinned at the papers' band edges; components
+combine as a weighted mean, and a component with no data drops out.
 
-| Contributor | Input | Knots (input → score) |
-| --- | --- | --- |
-| Total sleep | hours asleep | 0→0, 4→20, 5→40, 6→60, 7→80, 7.75→95, 8.5→100 |
-| Restfulness | awake time ÷ time in bed | 0→100, 5%→90, 10%→75, 20%→50, 35%→20, 50%→0 |
-| Efficiency | asleep ÷ time in bed | 50%→0, 65%→25, 75%→50, 85%→85, 90%→95, 95%→100 |
-| REM sleep | minutes | 0→0, 30→30, 60→65, 90→90, 120→100 |
-| Deep sleep | minutes | 0→0, 20→30, 45→65, 75→90, 105→100 |
-| Latency | minutes to first sleep | 0→70, 5→85, 12–20→100, 30→85, 45→60, 90→20, 150→0 |
-| Timing | hours between sleep midpoint and 03:00 | ≤1→100, 2→85, 3→65, 4.5→35, 6→10, 8→0; minus 10 per hour (max 25) that the midpoint drifts beyond 30 min from the circular mean of the previous 7 nights |
+| Component | Weight | Input | Source |
+| --- | --- | --- | --- |
+| Duration | 30 | hours asleep, against the recommended range for the age band | Hirshkowitz 2015 (NSF duration) |
+| Efficiency | 20 | asleep ÷ time in bed; ≥85 % appropriate | Ohayon 2017 (NSF quality) |
+| Awake during the night | 15 | minutes awake after sleep onset; ≤20 appropriate (≤30 from 65) | Ohayon 2017 |
+| Time to fall asleep | 10 | onset latency; ≤15 min appropriate | Ohayon 2017 |
+| Sleep stages | 10 | deep 13-23 %, REM 20-25 % of the night | Boulos 2019 |
+| Heart rate and HRV | 10 | lowest HR and mean HRV as z-scores against the wearer's own earlier main sleeps (needs 3) | personal baseline |
+| Awakenings | 5 | awakenings ≥ 1 min | Ohayon 2017 (scored leniently: the paper counts only > 5 min) |
 
-The shapes follow what `score-weights.md` found in Oura's data (monotone duration
-curves, a U-shaped latency curve, timing peaked at a ~03:00 midpoint plus
-regularity); the numbers are not Oura's.
+Stage architecture is weighted low because consumer staging is weakest at telling
+stages apart (de Zambotti 2019). Age comes from the app's setting; 40 is assumed
+when unset. These are consensus appropriateness bands, not clinical cut-offs.
 
-### Readiness
+## Oura-calibrated scores
 
-Baselines are the mean over up to 14 earlier nights from the last 21 days, and need
-at least 3 of them. Naps (under 3 h in bed) are neither scored nor used.
+`tools/calibrate_scores.py` fits, from an Oura account's trends export, one curve
+per contributor (isotonic, binned-empirical, linear, or constant) and stores them
+with the recovered combiner weights in `score_params.json`. The app imports that
+file (Ring tab → Scores) and `calibration.rs` evaluates it exactly like
+`tools/fit_sleep_score.py::score_from_params`: same curve kinds, same clamp to
+1-100, same fallbacks for a missing driver, same `round(Σ wᵢ·subᵢ / 100)`.
 
-| Contributor | Input | Knots |
-| --- | --- | --- |
-| Resting heart rate | lowest night HR − baseline (bpm) | ≤0→100, +2→85, +5→55, +8→30, +12→0 |
-| Previous night | that night's sleep score | identity |
-| HRV balance | night HRV ÷ baseline | 0.4→0, 0.6→30, 0.8→65, 0.9→85, ≥1→100 |
-| Body temperature | \|night skin temp − baseline\| (°C) | ≤0.3→100, 0.5→85, 1.0→45, 1.5→10, 2.0→0 |
-| Sleep balance | mean total sleep over the trailing nights incl. this one | the Total sleep curve |
-| Recovery index | hours from the lowest (median-of-5 smoothed) HR to wake-up | 0→20, 1→40, 3→70, ≥6→100 |
+Drivers supplied per night (`summary.rs::score_nights`):
 
-A readiness score needs at least three contributors and is flagged `provisional`
-until 14 nights of history exist.
+- **Sleep:** total / REM / deep duration and latency in seconds, efficiency in
+  percent, awake fraction of time in bed, and the timing features of
+  `fit_sleep_score.engineer` (midpoint hour wrapped to 24-30, squared distance from
+  03:00, circular distance from the mean midpoint of the previous 7 nights).
+- **Readiness:** as `tools/score_readiness.py`: the calibrated sleep score, night
+  HRV and lowest / average HR against their trailing-14-night means, skin
+  temperature deviation from its trailing mean, total sleep against its trailing
+  mean, the previous day's average MET against its trailing-14-day mean. A baseline
+  with no history falls back to tonight's value (no deviation). Recovery Index uses
+  the calibration's constant, as on the desktop.
 
-## Known differences from Oura
+Expected accuracy is bounded by the repository's own measurements
+([`score-weights.md`](score-weights.md)): Sleep end-to-end R² ≈ 0.96-0.97 *with
+Oura's staging model*, Readiness ≈ 0.49. With firmware stages and this app's MET
+aggregate, expect somewhat worse. This path has not been checked against a real
+calibration file and paired ring data.
 
-- Inputs: stage durations come from the ring's **firmware** hypnogram scaled to time
-  in bed, not SleepNet; HR/HRV are the ring's 5-minute averages.
-- Oura's HRV balance compares a 14-day trend with a ~3-month one, and its resting-HR
-  contributor also penalises unusually *low* values; ours do neither.
-- No rest/recovery-mode override, no Activity score, no activity contributors.
+## Estimated readiness (no calibration)
 
-## Making it closer
+Oura's recovered weights, renormalised over the contributors that can be computed
+without a calibration; the two activity contributors are left out. Baselines are
+the mean over up to 14 earlier main sleeps from the last 21 days and need 3.
 
-The honest route to Oura-like values is the one the Python tools already take:
-calibrate the curves from the user's own trends export. Importing a
-`score_params.json` into the app would replace the tables above without changing
-the combiner.
+| Contributor | Weight | Input | Knots (input → score) |
+| --- | --- | --- | --- |
+| Resting heart rate | 17 | lowest night HR − baseline (bpm) | ≤0→100, +2→85, +5→55, +8→30, +12→0 |
+| Previous night | 15 | the published-norms sleep score | identity |
+| HRV balance | 15 | night HRV ÷ baseline | 0.4→0, 0.6→30, 0.8→65, 0.9→85, ≥1→100 |
+| Body temperature | 13 | \|night skin temp − baseline\| (°C) | ≤0.3→100, 0.5→85, 1.0→45, 1.5→10, 2.0→0 |
+| Sleep balance | 12 | mean total sleep over the trailing nights | 0 h→0, 4→20, 5→40, 6→60, 7→80, 7.75→95, 8.5→100 |
+| Recovery index | 10 | hours from the lowest (median-of-5) HR to wake-up | 0→20, 1→40, 3→70, ≥6→100 |
+
+These curves are hand-set and unvalidated. A score needs three contributors and is
+`provisional` until 14 nights of history exist.

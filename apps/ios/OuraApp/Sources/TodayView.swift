@@ -35,7 +35,7 @@ struct TodayView: View {
                                 }
                             }
                             if model.summary?.clockEstimated == true {
-                                Text("Some times are estimated: the ring had no clock reference for part of this data. Turn on “Set ring clock when syncing” in the Ring tab to fix future data.")
+                                Text("Some times are estimated: part of this data was recorded before the ring had a clock reference. Data synced from now on is timed exactly.")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
@@ -60,11 +60,17 @@ struct TodayView: View {
             HStack(alignment: .top) {
                 ScoreRing(title: "Readiness", score: readiness, tint: .green)
                 ScoreRing(title: "Sleep", score: day.sleep?.sleepScore, tint: .indigo)
+                if let calibrated = day.sleep?.ouraSleepScore {
+                    ScoreRing(title: "Sleep", score: calibrated, tint: .teal)
+                }
             }
             if let readiness {
                 ContributorList(score: readiness, tint: .green)
+                Text(readiness.basis.explanation)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
                 if readiness.provisional {
-                    Text("Readiness is provisional until about two weeks of nights have been synced: it compares each night with your own baseline.")
+                    Text("Provisional until about two weeks of nights have been synced: readiness compares each night with your own baseline.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -73,9 +79,6 @@ struct TodayView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-            Text(scoreDisclaimer)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -127,6 +130,6 @@ struct TodayView: View {
 
     private func sleepValue(_ night: SleepNight?) -> String {
         guard let night else { return "–" }
-        return formatDuration(seconds: night.hasStages ? night.totalSleepS : night.timeInBedS)
+        return formatDuration(seconds: night.stagesComplete ? night.totalSleepS : night.timeInBedS)
     }
 }
