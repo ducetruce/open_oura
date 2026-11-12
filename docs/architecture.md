@@ -40,6 +40,7 @@ crate owns one job and depends only "downward".
 | `oura-analysis` | interpret (compute) | ecore-derived metric algorithms; daily-metric structs; `sleepnet` model wrapper (feature-gated) | oura-protocol | none (pure compute) |
 | `oura-store` | apply | SQLite schema + read/write, sync cursor, `redecode` | oura-protocol | SQLite |
 | `oura-cli` | wiring | protocol/debug command dispatch | all of the above | BLE, SQLite |
+| `oura-core` | wiring (iOS) | UniFFI API for `apps/ios`: foreign BLE link → `OuraClient`, sync into the store, `build_summary` (daily metrics from stored events) | all but `oura-cli` | SQLite; BLE via the Swift `RingLink` |
 
 **Where to add things**
 - A new **wire decoder** (new event body) → `oura-protocol::events::decode_body`

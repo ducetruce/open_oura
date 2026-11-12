@@ -45,10 +45,17 @@ offline. The one genuine cloud-only step is **workout auto-classification**
 
 ## App layer
 
-The web dashboard, iOS app, DNA explorer, blood PDF import, and model-running
-product surface now live in
-[`open_health`](https://github.com/Th0rgal/open_health). This repository is the
-Oura protocol/library base that `open_health` consumes.
+This fork carries a small native **iOS app** built directly on the crates here:
+`apps/ios/OuraApp` (SwiftUI + CoreBluetooth) on top of `crates/oura-core` (a UniFFI
+bridge over `oura-link` / `oura-store` / `oura-analysis`). It connects to the ring,
+syncs its history into SQLite on the phone and shows sleep, heart rate, HRV, SpO2,
+temperature and activity, with no cloud and no models. See
+[`apps/ios/README.md`](apps/ios/README.md).
+
+Upstream's richer product surface (web dashboard, model-running iOS app, DNA
+explorer, blood PDF import) lives in
+[`open_health`](https://github.com/Th0rgal/open_health), which consumes this
+repository as its protocol/library base.
 
 ## Quick start (Rust client)
 

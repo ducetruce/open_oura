@@ -297,6 +297,42 @@ impl Store {
         Ok(rows)
     }
 
+    /// Decoded events restricted to `tags`, in ingest order (which is the ring's own
+    /// chronological order), as `(ring_timestamp_deciseconds, tag, decoded_json,
+    /// captured_unix)`. Lets summary builders skip the bulky raw-sample streams.
+    pub fn decoded_events_for_tags(&self, tags: &[u8]) -> Result<Vec<(i64, u8, String, i64)>> {
+        if tags.is_empty() {
+            return Ok(Vec::new());
+        }
+        let list = tags
+            .iter()
+            .map(|t| t.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
+        let mut stmt = self.conn.prepare(&format!(
+            "SELECT ring_timestamp, tag, decoded_json, captured_unix FROM events \
+             WHERE decoded_json IS NOT NULL AND tag IN ({list}) ORDER BY id"
+        ))?;
+        let rows = stmt
+            .query_map([], |r| {
+                Ok((
+                    r.get::<_, i64>(0)?,
+                    r.get::<_, i64>(1)? as u8,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, i64>(3)?,
+                ))
+            })?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    /// Total number of stored events across all devices.
+    pub fn event_total(&self) -> Result<i64> {
+        Ok(self
+            .conn
+            .query_row("SELECT COUNT(*) FROM events", [], |r| r.get(0))?)
+    }
+
     /// Distinct device serials that have stored events.
     pub fn device_serials(&self) -> Result<Vec<String>> {
         let mut stmt = self

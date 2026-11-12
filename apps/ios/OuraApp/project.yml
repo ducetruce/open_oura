@@ -1,0 +1,35 @@
+# XcodeGen spec. Generate the project with `xcodegen generate` (run
+# ../build-rust.sh first: it creates Generated/ and ../OuraCore.xcframework).
+name: OuraApp
+options:
+  bundleIdPrefix: dev.openoura
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+targets:
+  OuraApp:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+      - Generated
+    dependencies:
+      - framework: ../OuraCore.xcframework
+        embed: false
+      # oura-store links the system SQLite on iOS (no bundled copy).
+      - sdk: libsqlite3.tbd
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.openoura.OuraApp
+        PRODUCT_NAME: Open Oura
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Open Oura
+        INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription: Open Oura connects to your Oura ring over Bluetooth to read your data directly from it.
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        # Set your own team to run on a device: DEVELOPMENT_TEAM: ABCDE12345
+        CODE_SIGN_STYLE: Automatic

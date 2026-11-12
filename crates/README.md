@@ -19,6 +19,9 @@ The code is split by concern - **fetch → interpret → apply** (see
   three scores). See [`docs/algorithms/`](../docs/algorithms/README.md).
 - **`oura-store`** - *apply*: SQLite persistence (raw events, readings, sync cursor).
 - **`oura-cli`** - the protocol/debug `oura` binary wiring it together.
+- **`oura-core`** - the UniFFI bridge the iOS app links: the same sync/store code
+  behind a foreign (CoreBluetooth) `RingLink`, plus the daily summary the app
+  renders (`summary::build_summary`). See [`apps/ios/README.md`](../apps/ios/README.md).
 
 ## Build
 

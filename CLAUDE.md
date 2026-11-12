@@ -4,6 +4,13 @@ Independent, cloud-free client for the Oura ring: BLE sync + decode in Rust, the
 health computations in Rust, the ML models (sleep / CVA / activity) as decrypted
 TorchScript. See `README.md` and `docs/` for the reverse-engineering details.
 
+> **State of this fork:** the web dashboard, `oura-summary`, the model runners and
+> the torch iOS path described below were split out upstream into `open_health`
+> and are **not in this repository**. What exists here is the model-free iOS app
+> (`apps/ios/OuraApp/`) on `crates/oura-core`, whose `summary::build_summary` is
+> the shared brain. `docs/clients-web-and-ios.md` lists the gaps. The rules below
+> apply again as soon as a second client is added.
+
 ## ⚠️ Two clients render the same data — keep them in sync
 
 There are **two user-facing apps** and a change usually belongs in **both**:
@@ -28,6 +35,6 @@ If you intentionally do only one client, say so and note it in the "Known gaps" 
 ## Building / running
 
 - Web dashboard: `oura dashboard` (see `dashboard/README.md`).
-- iOS (simulator): `apps/ios/OuraApp/build_run.sh` (model-free) or `build_run_torch.sh`
-  (on-device torch models). TestFlight: `apps/ios/TESTFLIGHT.md`.
+- iOS: `apps/ios/build-rust.sh`, then `xcodegen generate` in `apps/ios/OuraApp/`
+  (see `apps/ios/README.md`). Needs macOS + Xcode; it cannot be built on Linux.
 - Models, `libtorch`, `oura.db`, and auth keys are gitignored — never commit them.
