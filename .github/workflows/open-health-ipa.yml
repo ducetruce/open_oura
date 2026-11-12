@@ -1,0 +1,62 @@
+# Builds an UNSIGNED IPA of upstream open_health's iOS app (model-free build) on a
+# macOS runner and uploads it as a workflow artifact, ready to be signed.
+#
+# Run it from the Actions tab ("Run workflow"), then download the
+# "OpenHealth-unsigned-ipa" artifact from the finished run.
+name: Open Health unsigned IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: open_health commit, tag or branch to build
+        default: 8f616ec5bdf569e7faecbcefa2b8eff6f69ae2bc
+  push:
+    branches: [claude/sleepy-mccarthy-hwlbz6]
+    paths: [.github/workflows/open-health-ipa.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  ipa:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Check out open_health
+        uses: actions/checkout@v4
+        with:
+          repository: Th0rgal/open_health
+          ref: ${{ inputs.ref || '8f616ec5bdf569e7faecbcefa2b8eff6f69ae2bc' }}
+
+      - name: Build the Rust core and generate the Xcode project
+        run: CI_PRIMARY_REPOSITORY_PATH="$PWD" sh ci_scripts/ci_post_clone.sh
+
+      - name: Archive without signing
+        working-directory: apps/ios/OuraApp
+        run: |
+          xcodebuild archive \
+            -project OuraApp.xcodeproj -scheme OuraApp -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/OuraApp.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM=""
+
+      - name: Package the IPA
+        run: |
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$RUNNER_TEMP/OuraApp.xcarchive/Products/Applications/"*.app "$RUNNER_TEMP/ipa/Payload/"
+          cd "$RUNNER_TEMP/ipa"
+          zip -qry OpenHealth-unsigned.ipa Payload
+          # The entitlements the app expects (HealthKit), for whoever signs it.
+          cp "$GITHUB_WORKSPACE/apps/ios/OuraApp/OuraApp.entitlements" .
+          ls -lh OpenHealth-unsigned.ipa
+
+      - name: Upload the IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenHealth-unsigned-ipa
+          path: |
+            ${{ runner.temp }}/ipa/OpenHealth-unsigned.ipa
+            ${{ runner.temp }}/ipa/OuraApp.entitlements
+          if-no-files-found: error
